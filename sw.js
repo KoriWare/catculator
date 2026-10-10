@@ -1,5 +1,5 @@
 // Catculator offline cache. Bump VERSION on every release.
-const VERSION = "cc-7";
+const VERSION = "cc-8";
 const FILES = ["./", "index.html", "manifest.json?v=cc7", "icon-192.png?v=cc7", "icon-512.png?v=cc7", "apple-touch-icon.png?v=cc7"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
@@ -8,6 +8,6 @@ self.addEventListener("activate", (e) => {
 // Network first (so fixes show up right away), cache as the offline fallback.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(fetch(e.request).then((r) => { const cp = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, cp)); return r; })
+  e.respondWith(fetch(e.request, { cache: "no-store" }).then((r) => { const cp = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, cp)); return r; })
     .catch(() => caches.match(e.request).then((m) => m || caches.match("index.html"))));
 });
