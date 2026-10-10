@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>Catculator · Team Kori</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Catculator">
+<style>
+  :root {
+    --black: #111111;
+    --ink: #1a1a1a;
+    --yellow: #f5c518;
+    --yellow2: #ffe56a;
+    --cream: #fff6d6;
+    --red: #d3122a;
+    --line: #2a2a2a;
+    --pad: #1c1c1c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0c0c0c; color: var(--cream); }
+  body {
+    font: 16px/1.3 "Segoe UI", system-ui, sans-serif;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+  }
+  .cat {
+    width: min(420px, 100%);
+    background: var(--yellow);
+    color: var(--ink);
+    border-radius: 42px 42px 52px 52px;
+    padding: 118px 14px 18px;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45);
+  }
+  .head {
+    position: absolute;
+    left: 50%;
+    top: -108px;
+    transform: translateX(-50%);
+    width: 360px;
+    height: 270px;
+  }
+  .kicker { display: none; }
+  .screen {
+    background: #161616;
+    color: var(--yellow2);
+    border-radius: 18px;
+    min-height: 190px;
+    padding: 10px 12px;
+    border: 3px solid #111;
+    box-shadow: inset 0 0 0 2px #2b2b2b;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .line {
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    color: #8d8d8d;
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  .line.now { color: var(--yellow2); }
+  .cats { display: flex; flex-wrap: wrap; gap: 0; justify-content: flex-end; transform: translateX(var(--tilt, 0px)); }
+  .kitty {
+    width: 28px;
+    height: 18px;
+    display: inline-block;
+    animation: runin .7s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .kitty .leg { transform-origin: center; animation: step .18s ease-in-out infinite alternate; }
+  .kitty .leg.b { animation-delay: .09s; }
+  @keyframes runin {
+    0% { transform: translateX(70px); opacity: 0; }
+    70% { opacity: 1; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes step {
+    from { transform: translateY(0); }
+    to { transform: translateY(-2px); }
+  }
+  .ball {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #e1062c;
+    display: inline-block;
+    animation: bounce .45s ease-in-out infinite;
+    box-shadow: inset -2px -2px 0 rgba(0,0,0,.25);
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .string {
+    width: 22px;
+    height: 8px;
+    margin-right: 4px;
+    border-bottom: 3px solid #3cb043;
+    border-radius: 50%;
+    display: inline-block;
+    transform: rotate(-12deg);
+  }
+  .flip { display: inline-flex; transform: scaleX(-1); }
+  .paws { display: flex; justify-content: space-between; margin: 8px 6px 4px; }
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  button.key {
+    border: 0;
+    border-radius: 14px;
+    background: var(--ink);
+    color: var(--cream);
+    font: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    height: 58px;
+    cursor: pointer;
+  }
+  button.key.op { background: #2a2a2a; color: var(--yellow); position: relative; overflow: hidden; }
+  .keyball {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #e1062c;
+    box-shadow: inset -2px -2px 0 rgba(0,0,0,.25);
+    animation: roam 1.6s linear infinite;
+  }
+  @keyframes roam {
+    0% { left: 8px; top: 8px; }
+    25% { left: calc(100% - 22px); top: 10px; }
+    50% { left: calc(100% - 22px); top: calc(100% - 22px); }
+    75% { left: 8px; top: calc(100% - 22px); }
+    100% { left: 8px; top: 8px; }
+  }
+  button.key.eq { background: var(--red); color: white; }
+  button.key.wide { grid-column: span 2; }
+  .rear {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 18px -28px;
+  }
+  .dimmer {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .6s ease;
+    z-index: 40;
+  }
+  body.asleep .dimmer { opacity: .5; }
+  .best { display: none; }
+  #settings { cursor: pointer; }
+  .gearhit { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 40px; height: 34px; border: 0; background: transparent; cursor: pointer; }
+  .sheet { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.72); display: none; align-items: flex-start; justify-content: center; padding: 18px 14px; overflow-y: auto; }
+  .sheet.open { display: flex; }
+  .panel { width: min(420px, 100%); background: #161616; color: var(--cream); border: 3px solid var(--yellow); border-radius: 22px; padding: 16px; }
+  .panel h2 { margin: 0; color: var(--yellow); font-size: 22px; }
+  .phead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .xbtn { border: 0; border-radius: 12px; background: var(--yellow); color: var(--ink); font: inherit; font-weight: 800; font-size: 18px; width: 40px; height: 40px; cursor: pointer; }
+  .card { background: #222; border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--yellow2); }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; border: 0; border-radius: 10px; height: 40px; font: inherit; font-weight: 700; background: #111; color: var(--cream); cursor: pointer; }
+  .seg button.on { background: var(--yellow); color: var(--ink); }
+  .card ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.45; }
+  .danger { width: 100%; border: 0; border-radius: 10px; height: 42px; font: inherit; font-weight: 700; background: var(--red); color: #fff; cursor: pointer; }
+  .ver { text-align: center; font-size: 12px; color: #8d8d8d; margin-top: 6px; }
+  .pawbox { position: relative; display: inline-block; line-height: 0; }
+  .pawbtn {
+    position: absolute; left: 50%; top: 62%; transform: translate(-50%, -50%);
+    border: 0; border-radius: 12px; background: var(--ink); color: var(--yellow);
+    font: inherit; font-size: 13px; font-weight: 800; padding: 0 8px; height: 26px; min-width: 50px;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; line-height: 1;
+  }
+  .pawbtn .keyball { position: absolute; }
+  .pawbtn.pong { overflow: hidden; min-width: 54px; }
+  .pawbtn.pong .keyball { width: 10px; height: 10px; animation: roam2 1.6s linear infinite; }
+  @keyframes roam2 {
+    0% { left: 4px; top: 4px; } 25% { left: calc(100% - 14px); top: 4px; }
+    50% { left: calc(100% - 14px); top: calc(100% - 14px); } 75% { left: 4px; top: calc(100% - 14px); } 100% { left: 4px; top: 4px; }
+  }
+  .line .num { font-size: 20px; font-weight: 700; letter-spacing: .5px; word-break: break-all; text-align: right; }
+  .treat {
+    position: fixed;
+    width: 22px;
+    height: 12px;
+    z-index: 30;
+    animation: fall 2.4s linear forwards;
+    pointer-events: auto;
+  }
+  @keyframes fall { to { transform: translateY(110vh); } }
+  .kitty.drop { animation: drop .6s ease-in both; }
+  @keyframes drop { to { transform: translateY(40px); opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="dimmer" aria-hidden="true"></div>
+<div class="cat">
+  <div class="kicker">TEAM KORI</div>
+  <div class="head">
+    <svg viewBox="0 0 360 280" width="360" height="280" aria-label="Cute kitten">
+  <defs>
+    <radialGradient id="fur" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#f7b867"/>
+      <stop offset="60%" stop-color="#e48a35"/>
+      <stop offset="100%" stop-color="#b85e1f"/>
+    </radialGradient>
+    <radialGradient id="eyeL" cx="45%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#bff3e6"/>
+      <stop offset="45%" stop-color="#3fae9c"/>
+      <stop offset="100%" stop-color="#0f4a44"/>
+    </radialGradient>
+    <clipPath id="clipL"><ellipse cx="126" cy="150" rx="27" ry="30"/></clipPath>
+    <clipPath id="clipR"><ellipse cx="234" cy="150" rx="27" ry="30"/></clipPath>
+  </defs>
+  <!-- ears -->
+  <path d="M84 124 L60 16 Q68 10 78 18 L152 84 Z" fill="#c9692a"/>
+  <path d="M276 124 L300 16 Q292 10 282 18 L208 84 Z" fill="#c9692a"/>
+  <path d="M92 114 L72 34 L138 88 Z" fill="#f4b3a8"/>
+  <path d="M268 114 L288 34 L222 88 Z" fill="#f4b3a8"/>
+  <path d="M84 96 L94 70 M94 100 L106 76 M104 104 L118 84" stroke="#fff6ec" stroke-width="3" stroke-linecap="round"/>
+  <path d="M276 96 L266 70 M266 100 L254 76 M256 104 L242 84" stroke="#fff6ec" stroke-width="3" stroke-linecap="round"/>
+  <path d="M68 18 L62 2 M74 16 L76 0" stroke="#7a3a12" stroke-width="3" stroke-linecap="round"/>
+  <path d="M292 18 L298 2 M286 16 L284 0" stroke="#7a3a12" stroke-width="3" stroke-linecap="round"/>
+  <!-- fluffy head -->
+  <path d="M180 66 Q244 62 284 98 Q314 126 320 160 L346 168 L318 180 L340 198 L306 204 Q276 250 180 254 Q84 250 54 204 L20 198 L42 180 L14 168 L40 160 Q46 126 76 98 Q116 62 180 66 Z" fill="url(#fur)" stroke="#8a4416" stroke-width="3" stroke-linejoin="round"/>
+  <!-- forehead stripes -->
+  <path d="M180 72 L180 100 M160 74 L166 98 M200 74 L194 98 M140 82 L150 102 M220 82 L210 102" stroke="#9c4f1a" stroke-width="5" stroke-linecap="round"/>
+  <!-- white muzzle blaze -->
+  <path d="M180 104 Q166 132 158 160 Q122 178 118 208 Q140 246 180 248 Q220 246 242 208 Q238 178 202 160 Q194 132 180 104 Z" fill="#fffaf2"/>
+  <!-- cheeks -->
+  <ellipse cx="102" cy="196" rx="16" ry="9" fill="#ff8fa0" opacity=".45"/>
+  <ellipse cx="258" cy="196" rx="16" ry="9" fill="#ff8fa0" opacity=".45"/>
+  <!-- eyes -->
+  <ellipse cx="126" cy="150" rx="31" ry="34" fill="#1b1410"/>
+  <ellipse cx="234" cy="150" rx="31" ry="34" fill="#1b1410"/>
+  <ellipse cx="126" cy="150" rx="27" ry="30" fill="url(#eyeL)"/>
+  <ellipse cx="234" cy="150" rx="27" ry="30" fill="url(#eyeL)"/>
+  <g clip-path="url(#clipL)"><ellipse id="pupilL" cx="126" cy="156" rx="10" ry="14" fill="#08120f"/></g>
+  <g clip-path="url(#clipR)"><ellipse id="pupilR" cx="234" cy="156" rx="10" ry="14" fill="#08120f"/></g>
+  <ellipse cx="114" cy="136" rx="10" ry="11" fill="#fff"/>
+  <ellipse cx="222" cy="136" rx="10" ry="11" fill="#fff"/>
+  <circle cx="138" cy="166" r="4" fill="#fff" opacity=".9"/>
+  <circle cx="246" cy="166" r="4" fill="#fff" opacity=".9"/>
+  <path d="M96 128 L86 120 M100 120 L92 110" stroke="#1b1410" stroke-width="3" stroke-linecap="round"/>
+  <path d="M264 128 L274 120 M260 120 L268 110" stroke="#1b1410" stroke-width="3" stroke-linecap="round"/>
+  <!-- sleepy lids -->
+  <g id="sleepL" opacity="0"><ellipse cx="126" cy="150" rx="32" ry="35" fill="#e48a35"/><path d="M100 152 Q126 168 152 152" fill="none" stroke="#1b1410" stroke-width="4" stroke-linecap="round"/></g>
+  <g id="sleepR" opacity="0"><ellipse cx="234" cy="150" rx="32" ry="35" fill="#e48a35"/><path d="M208 152 Q234 168 260 152" fill="none" stroke="#1b1410" stroke-width="4" stroke-linecap="round"/></g>
+  <text id="zzz" x="262" y="66" fill="#fff6d6" font-size="22" font-weight="700" opacity="0">z z z</text>
+  <!-- nose + mouth -->
+  <path d="M168 176 Q180 170 192 176 Q188 186 180 189 Q172 186 168 176 Z" fill="#f2828c" stroke="#8a3a3a" stroke-width="1.5"/>
+  <path d="M180 189 L180 197" stroke="#5a2a20" stroke-width="3" stroke-linecap="round"/>
+  <path id="catMouth" d="M160 196 Q170 208 180 197 Q190 208 200 196" fill="none" stroke="#5a2a20" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse id="catTongue" cx="180" cy="208" rx="8" ry="5" fill="#ef6a7a" opacity="0"/>
+  <!-- whiskers -->
+  <path d="M30 172 Q76 170 116 186 M26 192 Q74 190 116 194 M34 212 Q78 204 118 200" fill="none" stroke="#fffaf2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M330 172 Q284 170 244 186 M334 192 Q286 190 244 194 M326 212 Q282 204 242 200" fill="none" stroke="#fffaf2" stroke-width="2" stroke-linecap="round"/>
+  <g id="daily"></g>
+</svg>
+  </div>
+
+  <div class="screen" id="screen" aria-label="Five line display"></div>
+
+  <div class="paws">
+    <span class="pawbox"><svg viewBox="0 0 90 46" width="120" height="62" aria-label="Left front paw">
+      <ellipse cx="45" cy="30" rx="34" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="22" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="38" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="54" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="68" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <g id="settings" transform="translate(45 30) scale(0.7)">
+        <g fill="#2fa83a">
+          <rect x="-2" y="-14" width="4" height="6"/>
+          <rect x="-2" y="8" width="4" height="6"/>
+          <rect x="-14" y="-2" width="6" height="4"/>
+          <rect x="8" y="-2" width="6" height="4"/>
+          <g transform="rotate(45)">
+            <rect x="-2" y="-14" width="4" height="6"/>
+            <rect x="-2" y="8" width="4" height="6"/>
+            <rect x="-14" y="-2" width="6" height="4"/>
+            <rect x="8" y="-2" width="6" height="4"/>
+          </g>
+          <circle r="7"/>
+        </g>
+        <circle r="2.8" fill="#111"/>
+      </g>
+    </svg><button class="gearhit" id="gearBtn" aria-label="Settings"></button></span>
+    <span class="pawbox"><svg viewBox="0 0 90 46" width="120" height="62" aria-label="Right front paw">
+      <ellipse cx="45" cy="30" rx="34" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="22" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="38" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="54" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="68" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    </svg><button class="pawbtn" id="modeBtn" aria-label="Switch cats or numbers">1-2-3</button></span>
+  </div>
+
+  <div class="keys">
+    <button class="key op" data-key="C">C</button>
+    <button class="key op" data-key="±" aria-label="Change sign">±</button>
+    <button class="key op" data-key="%" aria-label="Percent">%</button>
+    <button class="key op" data-key="÷">÷</button>
+    <button class="key" data-key="7">7</button>
+    <button class="key" data-key="8">8</button>
+    <button class="key" data-key="9">9</button>
+    <button class="key op" data-key="×">×</button>
+    <button class="key" data-key="4">4</button>
+    <button class="key" data-key="5">5</button>
+    <button class="key" data-key="6">6</button>
+    <button class="key op" data-key="−">−</button>
+    <button class="key" data-key="1">1</button>
+    <button class="key" data-key="2">2</button>
+    <button class="key" data-key="3">3</button>
+    <button class="key op" data-key="+">+</button>
+    <button class="key wide" data-key="0">0</button>
+    <button class="key" data-key=".">.</button>
+    <button class="key eq" data-key="=">=</button>
+  </div>
+
+  <div class="rear">
+    <span class="pawbox"><svg viewBox="0 0 100 40" width="130" height="52" aria-label="Left rear paw">
+      <ellipse cx="50" cy="24" rx="40" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="24" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="40" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="58" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="74" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    </svg><button class="pawbtn pong" data-key="pong" aria-label="Play Pong"><span class="keyball"></span></button></span>
+    <span class="pawbox"><svg viewBox="0 0 100 40" width="130" height="52" aria-label="Right rear paw">
+      <ellipse cx="50" cy="24" rx="40" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="24" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="40" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="58" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+      <circle cx="74" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    </svg><button class="pawbtn" data-key="meow" aria-label="Meow"><svg viewBox="0 0 32 28" width="24" height="20" aria-hidden="true">
+        <path d="M8 12 L5 2 L12 9 Z" fill="#e08a3c"/>
+        <path d="M24 12 L27 2 L20 9 Z" fill="#e08a3c"/>
+        <ellipse cx="16" cy="16" rx="11" ry="9" fill="#f6c48a"/>
+        <circle cx="12" cy="15" r="1.4" fill="#12302c"/>
+        <circle cx="20" cy="15" r="1.4" fill="#12302c"/>
+        <path d="M16 17 L14 19 L18 19 Z" fill="#ef7a62"/>
+      </svg></button></span>
+  </div>
+</div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="panel">
+    <div class="phead"><h2>Settings</h2><button class="xbtn" id="closeSet" aria-label="Close settings">✕</button></div>
+    <div class="card"><h3>Display</h3><div class="seg"><button data-mode="cats">Cats</button><button data-mode="nums">Numbers</button></div></div>
+    <div class="card"><h3>Sound</h3><div class="seg"><button data-snd="on">On</button><button data-snd="off">Off</button></div></div>
+    <div class="card"><h3>Secrets 🐾</h3><ul>
+      <li>Tap the red ball on the back-left paw to play Pong. Catch fish for bonus treats.</li>
+      <li>Hold the cat face on the back-right paw for a treat rain. Tap a falling treat.</li>
+      <li>Try 1 2 3 = and watch the kitty dance.</li>
+      <li>Divide by zero and see the face she makes.</li>
+      <li>Leave her alone for 30 seconds and she naps.</li>
+      <li>Tilt your phone, or give it a shake.</li>
+      <li>She wears something different depending on the date.</li>
+    </ul></div>
+    <div class="card"><h3>Saved data</h3><button class="danger" id="clearSaved">Clear saved state</button></div>
+    <div class="ver">Catculator · KoriWare</div>
+  </div>
+</div>
+<script>
+const CAT = `<svg class="kitty" viewBox="0 0 56 32" aria-hidden="true">
+  <path d="M4 18 C-6 4 -8 20 6 18" fill="none" stroke="#e08a3c" stroke-width="2.6" stroke-linecap="round"/>
+  <ellipse cx="20" cy="18" rx="11" ry="6" fill="#e08a3c"/>
+  <circle cx="34" cy="14" r="7" fill="#f6c48a"/>
+  <path d="M28 9 L25 -1 L34 8 Z" fill="#e08a3c"/>
+  <path d="M36 9 L44 -1 L40 9 Z" fill="#e08a3c"/>
+  <path d="M29 5 L27 1 L33 8 Z" fill="#f6c2b0"/>
+  <path d="M37 5 L42 1 L39 8 Z" fill="#f6c2b0"/>
+  <circle cx="36" cy="13" r="1.1" fill="#12302c"/>
+  <rect class="leg" x="16" y="22" width="2.2" height="7" rx="1" fill="#c96b34"/>
+  <rect class="leg b" x="23" y="22" width="2.2" height="7" rx="1" fill="#c96b34"/>
+</svg>`;
+const screen = document.getElementById('screen');
+let lines = [];
+let current = '0';
+let stored = null;
+let op = null;
+let fresh = true;
+let lastOp = null;
+let lastB = null;
+let mode = 'cats';
+let muted = false;
+const SAVE_KEY = 'catculatorState';
+
+function catSpan(n, faceLeft) {
+  const count = Math.max(0, Math.floor(Math.abs(Number(n))) || 0);
+  if (!count) return '<span class="math">0</span>';
+  const wrap = faceLeft ? 'cats flip' : 'cats';
+  if (count > 10 || (faceLeft && count > 9)) {
+    const one = CAT.replace('class="kitty"', 'class="kitty"');
+    const kitten = `<span class="${wrap}">${one}</span>`;
+    return faceLeft
+      ? `${kitten}<span class="math">(${count >= 1e21 ? BigInt(count).toString() : count})</span>`
+      : `<span class="math">(${count >= 1e21 ? BigInt(count).toString() : count})</span>${kitten}`;
+  }
+  const cats = Array.from({length: count}, (_, i) =>
+    CAT.replace('class="kitty"', `class="kitty" style="animation-delay:${i * 0.08}s"`)
+  ).join('');
+  return `<span class="${wrap}">${cats}</span>`;
+}
+// Lines are stored as raw entries ({n: value} | {o: op} | {e: 1}) and rendered per mode.
+function N(v) { return { n: String(v) }; }
+function O(v) { return { o: v }; }
+const ERR = { e: 1 };
+function plainNum(v) {
+  const s = String(v);
+  const neg = s.startsWith('-');
+  const body = neg ? s.slice(1) : s;
+  const [w, f] = body.split('.');
+  const whole = w.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (neg ? '−' : '') + whole + (body.includes('.') ? '.' + (f || '') : '');
+}
+function render(l) {
+  if (typeof l === 'string') return l;
+  if (!l || l.e) return '<span class="math">Err</span>';
+  if (l.o) return `<span class="math">${l.o}</span>`;
+  return mode === 'nums' ? `<span class="math num">${plainNum(l.n)}</span>` : lineFor(l.n);
+}
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ lines, current, stored, op, fresh, lastOp, lastB })); } catch (e) {}
+}
+function restore() {
+  try {
+    muted = localStorage.getItem('catculatorMuted') === '1';
+    const m = localStorage.getItem('catculatorMode');
+    if (m === 'nums' || m === 'cats') mode = m;
+    const q = new URLSearchParams(location.search).get('mode');
+    if (q === 'nums' || q === 'cats') mode = q;
+    const st = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+    if (st && Array.isArray(st.lines)) {
+      lines = st.lines.filter(l => l && typeof l === 'object');
+      current = typeof st.current === 'string' ? st.current : '0';
+      stored = typeof st.stored === 'number' ? st.stored : null;
+      op = st.op || null; fresh = st.fresh !== false;
+      lastOp = st.lastOp || null; lastB = typeof st.lastB === 'number' ? st.lastB : null;
+    }
+  } catch (e) {}
+}
+function paint() {
+  const view = lines.slice(-5);
+  screen.innerHTML = view.map((l, i) =>
+    `<div class="line${i === view.length - 1 ? ' now' : ''}">${render(l)}</div>`
+  ).join('') || '<div class="line now"><span class="math">0</span></div>';
+  if (!document.getElementById || !document.getElementById('pong')) save();
+}
+function setMode(m) {
+  mode = m;
+  try { localStorage.setItem('catculatorMode', m); } catch (e) {}
+  const b = document.getElementById('modeBtn');
+  if (b) b.innerHTML = m === 'cats' ? '1-2-3' : `<svg viewBox="0 0 32 28" width="24" height="20" aria-hidden="true"><path d="M8 12 L5 2 L12 9 Z" fill="#e08a3c"/><path d="M24 12 L27 2 L20 9 Z" fill="#e08a3c"/><ellipse cx="16" cy="16" rx="11" ry="9" fill="#f6c48a"/><circle cx="12" cy="15" r="1.4" fill="#12302c"/><circle cx="20" cy="15" r="1.4" fill="#12302c"/><path d="M16 17 L14 19 L18 19 Z" fill="#ef7a62"/></svg>`;
+  syncSettings();
+  if (!document.getElementById('pong')) paint();
+}
+function syncSettings() {
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  document.querySelectorAll('[data-snd]').forEach(b => b.classList.toggle('on', (b.dataset.snd === 'off') === muted));
+}
+function setMuted(m) {
+  muted = m;
+  try { localStorage.setItem('catculatorMuted', m ? '1' : '0'); } catch (e) {}
+  syncSettings();
+}
+function openSettings() { stopPong(); syncSettings(); document.getElementById('sheet').classList.add('open'); }
+function closeSettings() { document.getElementById('sheet').classList.remove('open'); }
+function clearSaved() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  clearAll();
+}
+function pushLine(entry) {
+  lines.push(entry);
+  if (lines.length > 20) lines = lines.slice(-20);
+  paint();
+}
+function replaceLine(entry) {
+  if (!lines.length) lines.push(entry);
+  else lines[lines.length - 1] = entry;
+  paint();
+}
+function fmt(r) {
+  return !Number.isFinite(r) ? 'Err' : Math.abs(r) >= 1e21 ? (r < 0 ? '-' : '') + BigInt(Math.round(Math.abs(r))).toString() : String(Math.round(r * 1e4) / 1e4);
+}
+function toggleSign() {
+  if (current === 'Err') return;
+  if (fresh && op) { current = '-0'; fresh = false; pushLine(N(current)); return; }
+  current = current.startsWith('-') ? current.slice(1) : '-' + current;
+  if (current === '-0' && fresh) current = '0';
+  const last = lines[lines.length - 1];
+  if (last && last.n != null) replaceLine(N(current)); else pushLine(N(current));
+  fresh = false;
+  paint();
+}
+function percent() {
+  if (current === 'Err') return;
+  const b = Number(current);
+  let v;
+  if (op === '+' || op === '−') v = stored * b / 100;
+  else if (op === '×' || op === '÷') v = b / 100;
+  else v = b / 100;
+  const pending = fresh && op;
+  current = fmt(v);
+  fresh = false;
+  if (pending) pushLine(N(current)); else replaceLine(N(current));
+}
+function inputDigit(d) {
+  if (fresh) {
+    current = d;
+    fresh = false;
+    pushLine(N(current));
+  } else {
+    const body = current.replace('-', '');
+    const frac = body.includes('.') ? body.split('.')[1] : '';
+    const room = body.includes('.') ? frac.length < 4 : body.length < 8;
+    if (room) current = (current === '0' ? d : current === '-0' ? '-' + d : current + d);
+    replaceLine(N(current));
+  }
+}
+function lineFor(value) {
+  const s = String(value);
+  const neg = s.startsWith('-');
+  const body = neg ? s.slice(1) : s;
+  const [whole, frac] = body.split('.');
+  const left = catSpan(Math.abs(parseInt(whole, 10)) || 0, neg);
+  const string = neg ? '<span class="string" aria-label="negative"></span>' : '';
+  if (!body.includes('.')) return string + left;
+  const digits = (frac || '').split('').map(d => d === '0' ? '<span class="math">0</span>' : catSpan(Number(d), neg)).join('');
+  return string + left + '<span class="ball" aria-label="decimal"></span>' + digits;
+}
+function inputDot() {
+  if (fresh) {
+    current = '0.';
+    fresh = false;
+    pushLine(N(current));
+  } else if (!current.includes('.')) {
+    current += '.';
+    replaceLine(N(current));
+  }
+}
+function setOp(next) {
+  if (current === 'Err') return;
+  if (op && fresh) { op = next; replaceLine(O(next)); return; }
+  if (op && !fresh) equals();
+  if (current === 'Err') return;
+  stored = Number(current);
+  op = next;
+  fresh = true;
+  pushLine(O(next));
+}
+let secret = '';
+function dance() {
+  const head = document.querySelector('.head');
+  let n = 0;
+  const t = setInterval(() => {
+    n++;
+    head.style.transform = `translateX(-50%) rotate(${n % 2 ? -10 : 10}deg) translateY(${n % 2 ? -8 : 0}px)`;
+    if (n > 10) { clearInterval(t); head.style.transform = 'translateX(-50%)'; }
+  }, 130);
+}
+function equals() {
+  if (current === 'Err') return;
+  let b;
+  if (op == null || stored == null) {
+    if (!lastOp) return;
+    stored = Number(current); op = lastOp; b = lastB;
+  } else {
+    b = Number(current);
+    lastOp = op; lastB = b;
+  }
+  let r = stored;
+  if (op === '+') r = stored + b;
+  if (op === '−') r = stored - b;
+  if (op === '×') r = stored * b;
+  if (op === '÷') r = b === 0 ? NaN : stored / b;
+  if (op === '÷' && b === 0) shock();
+  else if (Number.isFinite(r)) { blink(); purr(); }
+  current = fmt(r);
+  if (current === 'Err') { lastOp = null; lastB = null; }
+  pushLine(current === 'Err' ? ERR : N(current));
+  op = null;
+  stored = null;
+  fresh = true;
+  paint();
+}
+let meowCtx = null;
+function meow() {
+  if (muted) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!meowCtx) meowCtx = new AC();
+    if (meowCtx.state === 'suspended') meowCtx.resume();
+    const o = meowCtx.createOscillator();
+    const g = meowCtx.createGain();
+    const t = meowCtx.currentTime;
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(760, t + 0.12);
+    o.frequency.exponentialRampToValueAtTime(340, t + 0.38);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g);
+    g.connect(meowCtx.destination);
+    o.start(t);
+    o.stop(t + 0.45);
+  } catch (e) {}
+}
+function clearAll() {
+  stopPong();
+  lines = [];
+  current = '0';
+  stored = null;
+  op = null;
+  fresh = true;
+  lastOp = null;
+  lastB = null;
+  paint();
+}
+let pongTimer = null;
+let saved = null;
+function stopPong() {
+  if (pongTimer) cancelAnimationFrame(pongTimer);
+  pongTimer = null;
+  if (document.getElementById('pong')) {
+    if (saved) {
+      lines = saved.lines;
+      current = saved.current;
+      stored = saved.stored;
+      op = saved.op;
+      fresh = saved.fresh;
+      saved = null;
+    }
+    paint();
+  }
+}
+function startPong() {
+  if (!meowCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    meowCtx = new AC();
+  }
+  if (meowCtx.state === 'suspended') meowCtx.resume();
+  stopPong();
+  saved = { lines: lines.slice(), current, stored, op, fresh };
+  save();
+  const w = screen.clientWidth;
+  const h = screen.clientHeight;
+  screen.innerHTML = `<canvas id="pong" width="${w}" height="${h}" style="width:100%;height:100%;touch-action:none"></canvas>`;
+  const canvas = document.getElementById('pong');
+  const ctx = canvas.getContext('2d');
+  const ball = { x: w / 2, y: 40, vx: 2.4, vy: 2.8, r: 7 };
+  const fishColors = ['#f5c518','#ff7a18','#4ecfb8','#7aa2ff','#ff5fa2','#fff6d6'];
+  const fish = { x: -24, y: 52, vx: 1.7, wait: 120, color: '#f5c518' };
+  const fish2 = { x: w + 24, y: 72, vx: -1.9, wait: 180, color: '#7aa2ff' };
+  let pop = null;
+  const paddle = { w: 118, h: 36, x: w / 2 - 59 };
+  let treats = 0;
+  let lives = 9;
+  let hold = 180;
+  let boom = null;
+  const bestNow = Number(localStorage.getItem('catTreats') || 0);
+  function look(frac) {
+    const shift = (frac - 0.5) * 16;
+    const left = document.getElementById('pupilL');
+    const right = document.getElementById('pupilR');
+    if (left) left.setAttribute('cx', 126 + shift);
+    if (right) right.setAttribute('cx', 234 + shift);
+  }
+  function aim(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    paddle.x = Math.max(0, Math.min(w - paddle.w, x - paddle.w / 2));
+    look((paddle.x + paddle.w / 2) / w);
+    wake();
+  }
+  canvas.addEventListener('pointermove', e => aim(e.clientX));
+  canvas.addEventListener('pointerdown', e => aim(e.clientX));
+  function drawPaw() {
+    ctx.fillStyle = '#ffe56a';
+    const px = paddle.x;
+    const py = h - paddle.h - 2;
+    ctx.beginPath();
+    ctx.ellipse(px + 59, py + 24, 42, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    [[22, 8], [42, 2], [62, 2], [82, 8]].forEach(([tx, ty]) => {
+      ctx.beginPath();
+      ctx.arc(px + tx, py + ty, 9, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  function frame() {
+    ctx.fillStyle = '#161616';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#ffe56a';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('Best treats: ' + Math.max(bestNow, treats), 8, 18);
+    ctx.fillText('Treats Earned ' + treats, 8, 36);
+    ctx.fillText(lives + ' Lives Left', w - 92, 18);
+    drawPaw();
+    if (fish.wait > 0) fish.wait--;
+    else {
+      fish.x += fish.vx;
+      if (fish.x > w + 20) {
+        fish.x = -24;
+        fish.wait = 200;
+        fish.color = fishColors[Math.floor(Math.random() * fishColors.length)];
+      }
+      ctx.fillStyle = fish.color;
+      ctx.beginPath();
+      ctx.ellipse(fish.x, fish.y, 10, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(fish.x - 8, fish.y);
+      ctx.lineTo(fish.x - 14, fish.y - 5);
+      ctx.lineTo(fish.x - 14, fish.y + 5);
+      ctx.closePath();
+      ctx.fill();
+      if (Math.hypot(ball.x - fish.x, ball.y - fish.y) < ball.r + 10) {
+        treats += 3;
+        pop = { x: fish.x, y: fish.y, life: 40, text: '+3' };
+        fish.x = -24;
+        fish.wait = 240;
+        fish.color = fishColors[Math.floor(Math.random() * fishColors.length)];
+        meow();
+      }
+    }
+    if (fish2.wait > 0) fish2.wait--;
+    else {
+      fish2.x += fish2.vx;
+      if (fish2.x < -24) {
+        fish2.x = w + 24;
+        fish2.wait = 220;
+        fish2.color = fishColors[Math.floor(Math.random() * fishColors.length)];
+      }
+      ctx.fillStyle = fish2.color;
+      ctx.beginPath();
+      ctx.ellipse(fish2.x, fish2.y, 10, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(fish2.x + 8, fish2.y);
+      ctx.lineTo(fish2.x + 14, fish2.y - 5);
+      ctx.lineTo(fish2.x + 14, fish2.y + 5);
+      ctx.closePath();
+      ctx.fill();
+      if (Math.hypot(ball.x - fish2.x, ball.y - fish2.y) < ball.r + 10) {
+        treats += 5;
+        pop = { x: fish2.x, y: fish2.y, life: 40, text: '+5' };
+        fish2.x = w + 24;
+        fish2.wait = 260;
+        fish2.color = fishColors[Math.floor(Math.random() * fishColors.length)];
+        meow();
+      }
+    }
+    if (pop) {
+      ctx.fillStyle = '#fff6d6';
+      ctx.font = '18px sans-serif';
+      ctx.fillText(pop.text || '+3', pop.x, pop.y);
+      pop.y -= 0.4;
+      pop.life--;
+      if (pop.life <= 0) pop = null;
+    }
+    if (hold > 0) {
+      ctx.fillStyle = '#fff6d6';
+      ctx.font = '42px sans-serif';
+      ctx.fillText(hold > 120 ? '3' : hold > 60 ? '2' : '1', w / 2 - 12, h / 2);
+      hold--;
+      pongTimer = requestAnimationFrame(frame);
+      return;
+    }
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+    if (ball.x < ball.r || ball.x > w - ball.r) ball.vx *= -1;
+    if (ball.y < ball.r) ball.vy *= -1;
+    if (ball.y > h - paddle.h - ball.r && ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.vy > 0) {
+      ball.vy = -Math.abs(ball.vy) - 0.15;
+      ball.y = h - paddle.h - ball.r;
+      treats++;
+      meow();
+    } else if (ball.y > h + 10 && !boom) {
+      lives--;
+      if (lives <= 0) {
+        if (treats > bestNow) localStorage.setItem('catTreats', treats);
+        boom = Array.from({length: Math.max(treats, 1)}, () => ({
+          x: w / 2,
+          y: h / 2,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.8) * 6,
+          life: 90,
+          color: fishColors[Math.floor(Math.random() * fishColors.length)]
+        }));
+        const mouth = document.getElementById('catMouth');
+        const tongue = document.getElementById('catTongue');
+        if (mouth) mouth.setAttribute('d', 'M148 200 Q180 224 212 200');
+        if (tongue) {
+          tongue.setAttribute('opacity', '1');
+          let lick = 0;
+          const lickTimer = setInterval(() => {
+            lick++;
+            tongue.setAttribute('cy', lick % 2 ? '214' : '206');
+            if (lick > 8) clearInterval(lickTimer);
+          }, 180);
+        }
+      } else {
+        ball.x = w / 2;
+        ball.y = 40;
+        ball.vy = 2.8;
+        hold = 180;
+      }
+    }
+    if (boom) {
+      boom.forEach(t => {
+        t.x += t.vx;
+        t.y += t.vy;
+        t.vy += 0.08;
+        t.life--;
+        ctx.fillStyle = t.color;
+        ctx.beginPath();
+        ctx.ellipse(t.x, t.y, 7, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(t.x - 6, t.y);
+        ctx.lineTo(t.x - 11, t.y - 4);
+        ctx.lineTo(t.x - 11, t.y + 4);
+        ctx.closePath();
+        ctx.fill();
+      });
+      if (boom.every(t => t.life <= 0)) {
+        ctx.fillStyle = '#161616';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#fff6d6';
+        ctx.font = '28px sans-serif';
+        ctx.fillText('GAME OVER', w / 2 - 78, h / 2);
+        setTimeout(stopPong, 1600);
+        return;
+      }
+      pongTimer = requestAnimationFrame(frame);
+      return;
+    }
+    ctx.fillStyle = '#e1062c';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+    pongTimer = requestAnimationFrame(frame);
+  }
+  frame();
+}
+document.querySelectorAll('button.key, button.pawbtn[data-key]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const k = btn.dataset.key;
+    if (k >= '0' && k <= '9') secret = (secret + k).slice(-3);
+    else if (k === '=' && secret === '123') dance();
+    else if (k !== '=') secret = '';
+    if (k !== 'pong') stopPong();
+    if (k >= '0' && k <= '9') inputDigit(k);
+    else if (k === '.') inputDot();
+    else if (k === 'C') clearAll();
+    else if (k === 'pong') startPong();
+    else if (k === '±') toggleSign();
+    else if (k === '%') percent();
+    else if (k === 'meow') meow();
+    else if ('+−×÷'.includes(k)) setOp(k);
+    else if (k === '=') equals();
+  });
+});
+restore();
+setMode(mode);
+document.getElementById('gearBtn').addEventListener('click', openSettings);
+document.getElementById('closeSet').addEventListener('click', closeSettings);
+document.getElementById('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSettings(); });
+document.getElementById('clearSaved').addEventListener('click', clearSaved);
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+document.querySelectorAll('[data-snd]').forEach(b => b.addEventListener('click', () => setMuted(b.dataset.snd === 'off')));
+document.getElementById('modeBtn').addEventListener('click', () => setMode(mode === 'cats' ? 'nums' : 'cats'));
+let idle;
+function nap(on) {
+  document.body.classList.toggle('asleep', on);
+  document.querySelector('.cat').classList.toggle('night', on);
+  ['sleepL', 'sleepR', 'zzz'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('opacity', on ? '1' : '0');
+  });
+  ['pupilL', 'pupilR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('opacity', on ? '0' : '1');
+  });
+}
+function wake() {
+  nap(false);
+  clearTimeout(idle);
+  idle = setTimeout(() => nap(true), 30000);
+}
+document.addEventListener('pointerdown', wake);
+wake();
+function blink() {
+  ['pupilL', 'pupilR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('ry', '2');
+  });
+  setTimeout(() => ['pupilL', 'pupilR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('ry', '14');
+  }), 160);
+}
+function shock() {
+  ['pupilL', 'pupilR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('rx', '14'); el.setAttribute('ry', '18'); }
+  });
+  setTimeout(() => ['pupilL', 'pupilR'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('rx', '10'); el.setAttribute('ry', '14'); }
+  }), 700);
+}
+function purr() {
+  if (muted) return;
+  try {
+    if (!meowCtx) meowCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (meowCtx.state === 'suspended') meowCtx.resume();
+    const o = meowCtx.createOscillator();
+    const g = meowCtx.createGain();
+    const t = meowCtx.currentTime;
+    o.type = 'sine';
+    o.frequency.setValueAtTime(28, t);
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(g); g.connect(meowCtx.destination);
+    o.start(t); o.stop(t + 0.5);
+  } catch (e) {}
+}
+function dress() {
+  const g = document.getElementById('daily');
+  if (!g) return;
+  const pick = new Date().getDate() % 3;
+  g.innerHTML = pick === 0
+    ? '<path d="M150 96 L180 70 L210 96 Z" fill="#d3122a"/>'
+    : pick === 1
+    ? '<path d="M180 118 C170 104 154 112 166 126 L180 138 L194 126 C206 112 190 104 180 118 Z" fill="#e1062c"/>'
+    : '<rect x="108" y="138" width="40" height="16" rx="4" fill="#222"/><rect x="212" y="138" width="40" height="16" rx="4" fill="#222"/>';
+}
+let rain;
+function startRain() {
+  const colors = ['#f5c518','#ff7a18','#4ecfb8','#7aa2ff','#ff5fa2','#fff6d6'];
+  rain = setInterval(() => {
+    const t = document.createElement('div');
+    t.className = 'treat';
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    t.innerHTML = `<svg viewBox="0 0 22 12"><ellipse cx="11" cy="6" rx="7" ry="4" fill="${c}"/><path d="M4 6 L1 2 L1 10 Z" fill="${c}"/></svg>`;
+    t.style.left = Math.random() * (window.innerWidth - 20) + 'px';
+    t.style.top = '-10px';
+    t.addEventListener('pointerdown', ev => { ev.stopPropagation(); meow(); t.remove(); });
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }, 180);
+}
+function stopRain() { clearInterval(rain); }
+function shakeFall() {
+  document.querySelectorAll('.kitty').forEach(k => k.classList.add('drop'));
+  setTimeout(() => {
+    document.querySelectorAll('.kitty').forEach(k => k.classList.remove('drop'));
+    paint();
+  }, 700);
+}
+dress();
+const meowBtn = document.querySelector('[data-key="meow"]');
+meowBtn.addEventListener('pointerdown', startRain);
+meowBtn.addEventListener('pointerup', stopRain);
+meowBtn.addEventListener('pointerleave', stopRain);
+function setTilt(n) {
+  const x = Math.max(-28, Math.min(28, n));
+  document.querySelectorAll('.cats').forEach(el => el.style.setProperty('--tilt', x + 'px'));
+}
+async function allowTilt() {
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const ok = await DeviceOrientationEvent.requestPermission();
+      if (ok !== 'granted') return;
+    }
+  } catch (e) {}
+  window.addEventListener('deviceorientation', e => setTilt(e.gamma || 0));
+}
+document.addEventListener('pointerdown', allowTilt, { once: true });
+window.addEventListener('devicemotion', e => {
+  const a = e.accelerationIncludingGravity;
+  if (a && Math.abs(a.x) + Math.abs(a.y) > 28) shakeFall();
+});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
