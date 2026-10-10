@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc5">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc5">
+<link rel="manifest" href="manifest.json?v=cc7">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -21,7 +21,11 @@
     --pad: #1c1c1c;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: #0c0c0c; color: var(--cream); height: 100%; overflow: hidden; overscroll-behavior: none; }
+  html, body { margin: 0; background: #0c0c0c; color: var(--cream); height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+  html { position: fixed; inset: 0; }
+  button, .key, .pawbtn, .gearhit, .screen { touch-action: manipulation; }
+  .sheet { touch-action: pan-y; }
+  #pong { touch-action: none; }
   body {
     font: 16px/1.3 "Segoe UI", system-ui, sans-serif;
     height: 100vh;
@@ -197,6 +201,8 @@
   .hist li button b { color: var(--yellow2); }
   .hist .empty { color: #8d8d8d; font-size: 14px; }
   .card h3 .link { float: right; background: none; border: 0; color: var(--yellow); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; text-transform: none; letter-spacing: 0; }
+  .seg.nap { gap: 4px; }
+  .seg.nap button { font-size: 13px; padding: 0; }
   .row2 { display: flex; gap: 10px; }
   .row2 > .card { flex: 1; min-width: 0; }
   .site-footer { text-align: center; color: #8d8d8d; font-size: 12px; line-height: 1.35; margin-top: 8px; padding-bottom: env(safe-area-inset-bottom); }
@@ -426,13 +432,14 @@
       <div class="card"><h3>Sound</h3><div class="seg"><button data-snd="on">On</button><button data-snd="off">Off</button></div></div>
       <div class="card" id="vibeCard"><h3>Vibration</h3><div class="seg"><button data-vib="on">On</button><button data-vib="off">Off</button></div></div>
     </div>
+    <div class="card"><h3>Nap timer</h3><div class="seg nap"><button data-nap="15000">15s</button><button data-nap="30000">30s</button><button data-nap="60000">1m</button><button data-nap="120000">2m</button><button data-nap="300000">5m</button><button data-nap="0">Never</button></div></div>
     <div class="card"><h3>History <button class="link" id="clearHist">Clear</button></h3><ul class="hist" id="histList"></ul></div>
     <div class="card"><h3>Secrets 🐾</h3><ul>
       <li>Tap the red ball on the back-left paw to play Pong. Catch fish for bonus treats.</li>
       <li>Hold the cat face on the back-right paw for a treat rain. Tap a falling treat.</li>
       <li>Try 1 2 3 = and watch the kitty dance.</li>
       <li>Divide by zero and see the face she makes.</li>
-      <li>Leave her alone for 30 seconds and she naps.</li>
+      <li>Leave her alone and she naps. Pick how long in Nap timer.</li>
       <li>Tilt your phone, or give it a shake.</li>
       <li>She wears something different depending on the date.</li>
     </ul></div>
@@ -469,6 +476,8 @@ let lastB = null;
 let mode = 'cats';
 let muted = false;
 let vibeOn = true;
+const NAP_CHOICES = [15000, 30000, 60000, 120000, 300000, 0];
+let napMs = 30000;
 let calcHist = [];
 const HIST_KEY = 'catculatorHistory';
 const SAVE_KEY = 'catculatorState';
@@ -514,6 +523,8 @@ function restore() {
   try {
     muted = localStorage.getItem('catculatorMuted') === '1';
     vibeOn = localStorage.getItem('catculatorVibe') !== '0';
+    const nm = Number(localStorage.getItem('catculatorNap'));
+    napMs = localStorage.getItem('catculatorNap') !== null && NAP_CHOICES.includes(nm) ? nm : 30000;
     const h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
     calcHist = Array.isArray(h) ? h.filter(x => x && typeof x.a === 'string').slice(0, 10) : [];
     const m = localStorage.getItem('catculatorMode');
@@ -613,7 +624,15 @@ function copyAnswer() {
 let pressTimer = null;
 function pressStart() { if (document.getElementById('pong')) return; clearTimeout(pressTimer); pressTimer = setTimeout(copyAnswer, 500); }
 function pressEnd() { clearTimeout(pressTimer); pressTimer = null; }
+function setNap(ms) {
+  if (!NAP_CHOICES.includes(ms)) return;
+  napMs = ms;
+  try { localStorage.setItem('catculatorNap', String(ms)); } catch (e) {}
+  syncSettings();
+  wake();
+}
 function syncSettings() {
+  document.querySelectorAll('[data-nap]').forEach(b => b.classList.toggle('on', Number(b.dataset.nap) === napMs));
   document.querySelectorAll('[data-vib]').forEach(b => b.classList.toggle('on', (b.dataset.vib === 'on') === vibeOn));
   const vc = document.getElementById('vibeCard');
   if (vc && vc.style) vc.style.display = canVibrate() ? '' : 'none';
@@ -1048,15 +1067,48 @@ function fit() {
   cat.style.setProperty('--dy', dy.toFixed(1) + 'px');
 }
 if (window.addEventListener) {
-  window.addEventListener('resize', fit);
-  window.addEventListener('orientationchange', () => setTimeout(fit, 200));
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
-  window.addEventListener('load', fit);
+  let fitT = null, lastVW = 0, lastVH = 0;
+  const maybeFit = (force) => {
+    clearTimeout(fitT);
+    fitT = setTimeout(() => {
+      const vv = window.visualViewport;
+      const w = vv ? vv.width : window.innerWidth, h = vv ? vv.height : window.innerHeight;
+      if (!force && Math.abs(w - lastVW) < 1 && Math.abs(h - lastVH) < 1) return;
+      if (vv && vv.scale && Math.abs(vv.scale - 1) > 0.01) return; // ignore pinch-zoom resizes
+      lastVW = w; lastVH = h;
+      fit();
+    }, 120);
+  };
+  window.addEventListener('resize', () => maybeFit(false));
+  window.addEventListener('orientationchange', () => setTimeout(() => maybeFit(true), 200));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => maybeFit(false));
+  window.addEventListener('load', () => maybeFit(true));
+  // iOS: stop double-tap zoom and pinch from moving the page.
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const t = e.target;
+    const inside = t && t.closest && (t.closest('.sheet') || t.closest('#pong'));
+    const now = Date.now();
+    if (!inside && now - lastTouchEnd < 300) {
+      e.preventDefault();
+      // preventDefault eats the click, so press the button ourselves to keep fast taps working
+      const b = t && t.closest && t.closest('button');
+      if (b) b.click();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1) { e.preventDefault(); return; }
+    const t = e.target;
+    if (!(t && t.closest && (t.closest('.sheet') || t.closest('#pong')))) e.preventDefault();
+  }, { passive: false });
 }
 restore();
 setMode(mode);
 fit();
 document.getElementById('gearBtn').addEventListener('click', openSettings);
+document.querySelectorAll('[data-nap]').forEach(b => b.addEventListener('click', () => setNap(Number(b.dataset.nap))));
 document.querySelectorAll('[data-vib]').forEach(b => b.addEventListener('click', () => setVibe(b.dataset.vib === 'on')));
 document.getElementById('clearHist').addEventListener('click', clearHistory);
 document.getElementById('histList').addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-hist]'); if (b) loadHistory(Number(b.dataset.hist)); });
@@ -1085,7 +1137,7 @@ function nap(on) {
 function wake() {
   nap(false);
   clearTimeout(idle);
-  idle = setTimeout(() => nap(true), 30000);
+  idle = napMs > 0 ? setTimeout(() => nap(true), napMs) : null;
 }
 document.addEventListener('pointerdown', wake);
 wake();
