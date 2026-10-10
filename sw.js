@@ -1,6 +1,6 @@
 // Catculator offline cache. Bump VERSION on every release.
-const VERSION = "cc-13";
-const FILES = ["./", "index.html", "manifest.json?v=cc13", "icon-192.png?v=cc13", "icon-512.png?v=cc13", "apple-touch-icon.png?v=cc13"];
+const VERSION = "cc-15";
+const FILES = ["./", "index.html", "manifest.json?v=cc15", "icon-192.png?v=cc15", "icon-512.png?v=cc15", "apple-touch-icon.png?v=cc15"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

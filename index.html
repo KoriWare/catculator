@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc13">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc13">
+<link rel="manifest" href="manifest.json?v=cc15">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -123,6 +123,13 @@
     transform: rotate(-12deg);
   }
   .flip { display: inline-flex; transform: scaleX(-1); }
+  .catsio { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%) scaleX(1.1); margin: 0; font-family: "Arial Black", "Helvetica Neue", Arial, system-ui, sans-serif; font-weight: 900; font-size: 13px; line-height: 1; letter-spacing: .05em; color: #0068B7; -webkit-text-stroke: .7px #0068B7; white-space: nowrap; pointer-events: none; user-select: none; z-index: 3; }
+  .brand { display: flex; gap: 12px; align-items: center; min-width: 0; }
+  .brand-mark { width: 14px; height: 54px; border-radius: 4px; background: linear-gradient(180deg, #2dd4bf, #e8894a); flex: none; box-shadow: 0 0 14px rgba(45,212,191,.25); }
+  .brand-kicker { margin: 0; font: 700 11.5px "Segoe UI", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #2dd4bf; }
+  .brand-title { margin: 2px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #fff; }
+  .brand-title span { color: #f2a66f; }
+  .brand h2 { font-size: 13px !important; color: #8d8d8d !important; font-weight: 600; margin: 2px 0 0 !important; letter-spacing: .04em; }
   .paws { display: flex; justify-content: space-between; margin: -6px -10px -14px; position: relative; z-index: 2; pointer-events: none; }
   .keys {
     display: grid;
@@ -310,6 +317,7 @@
   <div class="screen" id="screen" aria-label="Five line display"></div>
 
   <div class="paws">
+    <div class="catsio" aria-hidden="true">CATSIO</div>
     <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="150" height="99" aria-label="Left front paw">
       <defs><radialGradient id="gLe150" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
       <g stroke="#d9a066" stroke-width="1.6" fill="url(#gLe150)">
@@ -429,7 +437,7 @@
 </div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Settings">
   <div class="panel">
-    <div class="phead"><h2>Settings</h2><button class="xbtn" id="closeSet" aria-label="Close settings">✕</button></div>
+    <div class="phead"><div class="brand"><span class="brand-mark" aria-hidden="true"></span><div><p class="brand-kicker">Team Kori · Fun Tools</p><h1 class="brand-title"><span>Cat</span>culator</h1><h2>Settings</h2></div></div><button class="xbtn" id="closeSet" aria-label="Close settings">✕</button></div>
     <div class="card"><h3>Display</h3><div class="seg"><button data-mode="cats">Cats</button><button data-mode="nums">Numbers</button></div></div>
     <div class="row2">
       <div class="card"><h3>Sound</h3><div class="seg"><button data-snd="on">On</button><button data-snd="off">Off</button></div></div>
