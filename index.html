@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json?v=cc4">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -113,7 +113,7 @@
     transform: rotate(-12deg);
   }
   .flip { display: inline-flex; transform: scaleX(-1); }
-  .paws { display: flex; justify-content: space-between; margin: 8px 6px 4px; }
+  .paws { display: flex; justify-content: space-between; margin: -6px -10px -14px; position: relative; z-index: 2; pointer-events: none; }
   .keys {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -153,8 +153,12 @@
   .rear {
     display: flex;
     justify-content: space-between;
-    margin: 10px 18px -28px;
+    margin: -6px 4px -40px;
+    position: relative; z-index: 2; pointer-events: none;
   }
+  .pawart { pointer-events: none; display: block; filter: drop-shadow(0 3px 2px rgba(0,0,0,.18)); }
+  .pawbox .pawbtn, .pawbox .gearhit { pointer-events: auto; z-index: 3; }
+  .keys { position: relative; z-index: 1; }
   .dimmer {
     position: fixed;
     inset: 0;
@@ -167,7 +171,7 @@
   body.asleep .dimmer { opacity: .5; }
   .best { display: none; }
   #settings { cursor: pointer; }
-  .gearhit { position: absolute; left: 50%; top: 62%; transform: translate(-50%,-50%); width: 40px; height: 34px; border: 0; background: transparent; cursor: pointer; }
+  .gearhit { position: absolute; left: 50%; top: 66%; transform: translate(-50%,-50%); width: 40px; height: 34px; border: 0; background: transparent; cursor: pointer; }
   .sheet { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.72); display: none; align-items: flex-start; justify-content: center; padding: 18px 14px; overflow-y: auto; }
   .sheet.open { display: flex; }
   .panel { width: min(420px, 100%); background: #161616; color: var(--cream); border: 3px solid var(--yellow); border-radius: 22px; padding: 16px; }
@@ -181,10 +185,23 @@
   .seg button.on { background: var(--yellow); color: var(--ink); }
   .card ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.45; }
   .danger { width: 100%; border: 0; border-radius: 10px; height: 42px; font: inherit; font-weight: 700; background: var(--red); color: #fff; cursor: pointer; }
-  .ver { text-align: center; font-size: 12px; color: #8d8d8d; margin-top: 6px; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--yellow); color: var(--ink); font-weight: 800; padding: 10px 16px; border-radius: 14px; opacity: 0; transition: .25s; z-index: 80; pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .screen { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .card .hist, .hist { list-style: none; margin: 0; padding: 0; max-height: 168px; overflow-y: auto; }
+  .hist li button { width: 100%; text-align: right; background: #111; color: var(--cream); border: 0; border-radius: 8px; font: inherit; font-size: 15px; padding: 7px 10px; margin-bottom: 4px; cursor: pointer; }
+  .hist li button b { color: var(--yellow2); }
+  .hist .empty { color: #8d8d8d; font-size: 14px; }
+  .card h3 .link { float: right; background: none; border: 0; color: var(--yellow); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; text-transform: none; letter-spacing: 0; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > .card { flex: 1; min-width: 0; }
+  .site-footer { text-align: center; color: #8d8d8d; font-size: 12px; line-height: 1.35; margin-top: 8px; padding-bottom: env(safe-area-inset-bottom); }
+  .site-footer p { margin: 4px 0; }
+  .site-footer .fine { opacity: .75; }
+  .cat-mark { height: 1.25em; width: auto; vertical-align: -.25em; margin-right: 6px; }
   .pawbox { position: relative; display: inline-block; line-height: 0; }
   .pawbtn {
-    position: absolute; left: 50%; top: 62%; transform: translate(-50%, -50%);
+    position: absolute; left: 50%; top: 66%; transform: translate(-50%, -50%);
     border: 0; border-radius: 12px; background: var(--ink); color: var(--yellow);
     font: inherit; font-size: 13px; font-weight: 800; padding: 0 8px; height: 26px; min-width: 50px;
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; line-height: 1;
@@ -280,13 +297,22 @@
   <div class="screen" id="screen" aria-label="Five line display"></div>
 
   <div class="paws">
-    <span class="pawbox"><svg viewBox="0 0 90 46" width="120" height="62" aria-label="Left front paw">
-      <ellipse cx="45" cy="30" rx="34" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="22" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="38" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="54" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="68" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <g id="settings" transform="translate(45 30) scale(0.7)">
+    <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="150" height="99" aria-label="Left front paw">
+      <defs><radialGradient id="gLe150" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
+      <g stroke="#d9a066" stroke-width="1.6" fill="url(#gLe150)">
+        <ellipse cx="50" cy="44" rx="45" ry="21"/>
+        <circle cx="17" cy="25" r="12.5"/><circle cx="37" cy="14" r="13"/><circle cx="63" cy="14" r="13"/><circle cx="83" cy="25" r="12.5"/>
+      </g>
+      <g fill="#ffffff" stroke="none" opacity=".9">
+        <ellipse cx="50" cy="40" rx="40" ry="16"/><circle cx="17" cy="24" r="10.5"/><circle cx="37" cy="13" r="11"/><circle cx="63" cy="13" r="11"/><circle cx="83" cy="24" r="10.5"/>
+      </g>
+      <path d="M6 44 l-4 -3 M6 49 l-4 1 M94 44 l4 -3 M94 49 l4 1 M44 1.5 l1 -2 M56 1.5 l-1 -2" stroke="#e7c9a2" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#f7a1b3" stroke="#e27d94" stroke-width="1">
+        <ellipse cx="17" cy="26" rx="5.5" ry="6.2"/><ellipse cx="37" cy="15" rx="6" ry="6.8"/><ellipse cx="63" cy="15" rx="6" ry="6.8"/><ellipse cx="83" cy="26" rx="5.5" ry="6.2"/>
+        <path d="M50 30 C66 30 76 40 74 49 C72 58 61 58 50 54 C39 58 28 58 26 49 C24 40 34 30 50 30 Z"/>
+      </g>
+      <g fill="#fff" opacity=".65"><ellipse cx="35" cy="12" rx="2" ry="1.5"/><ellipse cx="61" cy="12" rx="2" ry="1.5"/><ellipse cx="15" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="81" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="42" cy="35" rx="5" ry="2"/></g>
+      <g id="settings" transform="translate(50 44) scale(0.75)">
         <g fill="#2fa83a">
           <rect x="-2" y="-14" width="4" height="6"/>
           <rect x="-2" y="8" width="4" height="6"/>
@@ -303,12 +329,22 @@
         <circle r="2.8" fill="#111"/>
       </g>
     </svg><button class="gearhit" id="gearBtn" aria-label="Settings"></button></span>
-    <span class="pawbox"><svg viewBox="0 0 90 46" width="120" height="62" aria-label="Right front paw">
-      <ellipse cx="45" cy="30" rx="34" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="22" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="38" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="54" cy="8" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="68" cy="14" r="8" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="150" height="99" aria-label="Right front paw">
+      <defs><radialGradient id="gRi150" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
+      <g transform="translate(100 0) scale(-1 1)" stroke="#d9a066" stroke-width="1.6" fill="url(#gRi150)">
+        <ellipse cx="50" cy="44" rx="45" ry="21"/>
+        <circle cx="17" cy="25" r="12.5"/><circle cx="37" cy="14" r="13"/><circle cx="63" cy="14" r="13"/><circle cx="83" cy="25" r="12.5"/>
+      </g>
+      <g fill="#ffffff" stroke="none" opacity=".9">
+        <ellipse cx="50" cy="40" rx="40" ry="16"/><circle cx="17" cy="24" r="10.5"/><circle cx="37" cy="13" r="11"/><circle cx="63" cy="13" r="11"/><circle cx="83" cy="24" r="10.5"/>
+      </g>
+      <path d="M6 44 l-4 -3 M6 49 l-4 1 M94 44 l4 -3 M94 49 l4 1 M44 1.5 l1 -2 M56 1.5 l-1 -2" stroke="#e7c9a2" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#f7a1b3" stroke="#e27d94" stroke-width="1">
+        <ellipse cx="17" cy="26" rx="5.5" ry="6.2"/><ellipse cx="37" cy="15" rx="6" ry="6.8"/><ellipse cx="63" cy="15" rx="6" ry="6.8"/><ellipse cx="83" cy="26" rx="5.5" ry="6.2"/>
+        <path d="M50 30 C66 30 76 40 74 49 C72 58 61 58 50 54 C39 58 28 58 26 49 C24 40 34 30 50 30 Z"/>
+      </g>
+      <g fill="#fff" opacity=".65"><ellipse cx="35" cy="12" rx="2" ry="1.5"/><ellipse cx="61" cy="12" rx="2" ry="1.5"/><ellipse cx="15" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="81" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="42" cy="35" rx="5" ry="2"/></g>
+      
     </svg><button class="pawbtn" id="modeBtn" aria-label="Switch cats or numbers">1-2-3</button></span>
   </div>
 
@@ -335,19 +371,39 @@
   </div>
 
   <div class="rear">
-    <span class="pawbox"><svg viewBox="0 0 100 40" width="130" height="52" aria-label="Left rear paw">
-      <ellipse cx="50" cy="24" rx="40" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="24" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="40" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="58" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="74" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="148" height="98" aria-label="Left rear paw">
+      <defs><radialGradient id="gLe160" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
+      <g stroke="#d9a066" stroke-width="1.6" fill="url(#gLe160)">
+        <ellipse cx="50" cy="44" rx="45" ry="21"/>
+        <circle cx="17" cy="25" r="12.5"/><circle cx="37" cy="14" r="13"/><circle cx="63" cy="14" r="13"/><circle cx="83" cy="25" r="12.5"/>
+      </g>
+      <g fill="#ffffff" stroke="none" opacity=".9">
+        <ellipse cx="50" cy="40" rx="40" ry="16"/><circle cx="17" cy="24" r="10.5"/><circle cx="37" cy="13" r="11"/><circle cx="63" cy="13" r="11"/><circle cx="83" cy="24" r="10.5"/>
+      </g>
+      <path d="M6 44 l-4 -3 M6 49 l-4 1 M94 44 l4 -3 M94 49 l4 1 M44 1.5 l1 -2 M56 1.5 l-1 -2" stroke="#e7c9a2" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#f7a1b3" stroke="#e27d94" stroke-width="1">
+        <ellipse cx="17" cy="26" rx="5.5" ry="6.2"/><ellipse cx="37" cy="15" rx="6" ry="6.8"/><ellipse cx="63" cy="15" rx="6" ry="6.8"/><ellipse cx="83" cy="26" rx="5.5" ry="6.2"/>
+        <path d="M50 30 C66 30 76 40 74 49 C72 58 61 58 50 54 C39 58 28 58 26 49 C24 40 34 30 50 30 Z"/>
+      </g>
+      <g fill="#fff" opacity=".65"><ellipse cx="35" cy="12" rx="2" ry="1.5"/><ellipse cx="61" cy="12" rx="2" ry="1.5"/><ellipse cx="15" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="81" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="42" cy="35" rx="5" ry="2"/></g>
+      
     </svg><button class="pawbtn pong" data-key="pong" aria-label="Play Pong"><span class="keyball"></span></button></span>
-    <span class="pawbox"><svg viewBox="0 0 100 40" width="130" height="52" aria-label="Right rear paw">
-      <ellipse cx="50" cy="24" rx="40" ry="14" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="24" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="40" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="58" cy="6" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
-      <circle cx="74" cy="10" r="7" fill="#fff" stroke="#e08a3c" stroke-width="2"/>
+    <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="148" height="98" aria-label="Right rear paw">
+      <defs><radialGradient id="gRi160" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
+      <g transform="translate(100 0) scale(-1 1)" stroke="#d9a066" stroke-width="1.6" fill="url(#gRi160)">
+        <ellipse cx="50" cy="44" rx="45" ry="21"/>
+        <circle cx="17" cy="25" r="12.5"/><circle cx="37" cy="14" r="13"/><circle cx="63" cy="14" r="13"/><circle cx="83" cy="25" r="12.5"/>
+      </g>
+      <g fill="#ffffff" stroke="none" opacity=".9">
+        <ellipse cx="50" cy="40" rx="40" ry="16"/><circle cx="17" cy="24" r="10.5"/><circle cx="37" cy="13" r="11"/><circle cx="63" cy="13" r="11"/><circle cx="83" cy="24" r="10.5"/>
+      </g>
+      <path d="M6 44 l-4 -3 M6 49 l-4 1 M94 44 l4 -3 M94 49 l4 1 M44 1.5 l1 -2 M56 1.5 l-1 -2" stroke="#e7c9a2" stroke-width="1.6" stroke-linecap="round"/>
+      <g fill="#f7a1b3" stroke="#e27d94" stroke-width="1">
+        <ellipse cx="17" cy="26" rx="5.5" ry="6.2"/><ellipse cx="37" cy="15" rx="6" ry="6.8"/><ellipse cx="63" cy="15" rx="6" ry="6.8"/><ellipse cx="83" cy="26" rx="5.5" ry="6.2"/>
+        <path d="M50 30 C66 30 76 40 74 49 C72 58 61 58 50 54 C39 58 28 58 26 49 C24 40 34 30 50 30 Z"/>
+      </g>
+      <g fill="#fff" opacity=".65"><ellipse cx="35" cy="12" rx="2" ry="1.5"/><ellipse cx="61" cy="12" rx="2" ry="1.5"/><ellipse cx="15" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="81" cy="23.5" rx="1.8" ry="1.3"/><ellipse cx="42" cy="35" rx="5" ry="2"/></g>
+      
     </svg><button class="pawbtn" data-key="meow" aria-label="Meow"><svg viewBox="0 0 32 28" width="24" height="20" aria-hidden="true">
         <path d="M8 12 L5 2 L12 9 Z" fill="#e08a3c"/>
         <path d="M24 12 L27 2 L20 9 Z" fill="#e08a3c"/>
@@ -362,7 +418,11 @@
   <div class="panel">
     <div class="phead"><h2>Settings</h2><button class="xbtn" id="closeSet" aria-label="Close settings">✕</button></div>
     <div class="card"><h3>Display</h3><div class="seg"><button data-mode="cats">Cats</button><button data-mode="nums">Numbers</button></div></div>
-    <div class="card"><h3>Sound</h3><div class="seg"><button data-snd="on">On</button><button data-snd="off">Off</button></div></div>
+    <div class="row2">
+      <div class="card"><h3>Sound</h3><div class="seg"><button data-snd="on">On</button><button data-snd="off">Off</button></div></div>
+      <div class="card" id="vibeCard"><h3>Vibration</h3><div class="seg"><button data-vib="on">On</button><button data-vib="off">Off</button></div></div>
+    </div>
+    <div class="card"><h3>History <button class="link" id="clearHist">Clear</button></h3><ul class="hist" id="histList"></ul></div>
     <div class="card"><h3>Secrets 🐾</h3><ul>
       <li>Tap the red ball on the back-left paw to play Pong. Catch fish for bonus treats.</li>
       <li>Hold the cat face on the back-right paw for a treat rain. Tap a falling treat.</li>
@@ -373,9 +433,14 @@
       <li>She wears something different depending on the date.</li>
     </ul></div>
     <div class="card"><h3>Saved data</h3><button class="danger" id="clearSaved">Clear saved state</button></div>
-    <div class="ver">Catculator · KoriWare</div>
+    <footer class="site-footer">
+      <p>Team Kori · Jenny (calc) · Maria (UI) · Stacey (free check) · Casey (launch)</p>
+      <p class="fine">Static page · free GitHub Pages friendly · no accounts, no private data</p>
+      <p class="fine"><svg class="cat-mark" viewBox="150 190 724 644" width="18" height="16" aria-hidden="true"><path fill="#f7c613" d="M512 352 L590 338 Q640 260 704 196 Q726 300 742 392 Q790 450 812 528 L868 548 L812 580 L848 622 L790 622 Q752 720 640 772 L512 828 L384 772 Q272 720 234 622 L176 622 L212 580 L156 548 L212 528 Q234 450 282 392 Q298 300 320 196 Q384 260 434 338 Z"/><path fill="#e01b1b" d="M548 566 Q600 520 668 506 Q660 552 628 578 Q588 596 556 590 Z"/><path fill="#e01b1b" d="M476 566 Q424 520 356 506 Q364 552 396 578 Q436 596 468 590 Z"/></svg>© 2026 KoriWare · All rights reserved</p>
+    </footer>
   </div>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const CAT = `<svg class="kitty" viewBox="0 0 56 32" aria-hidden="true">
   <path d="M4 18 C-6 4 -8 20 6 18" fill="none" stroke="#e08a3c" stroke-width="2.6" stroke-linecap="round"/>
@@ -399,6 +464,9 @@ let lastOp = null;
 let lastB = null;
 let mode = 'cats';
 let muted = false;
+let vibeOn = true;
+let calcHist = [];
+const HIST_KEY = 'catculatorHistory';
 const SAVE_KEY = 'catculatorState';
 
 function catSpan(n, faceLeft) {
@@ -441,6 +509,9 @@ function save() {
 function restore() {
   try {
     muted = localStorage.getItem('catculatorMuted') === '1';
+    vibeOn = localStorage.getItem('catculatorVibe') !== '0';
+    const h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    calcHist = Array.isArray(h) ? h.filter(x => x && typeof x.a === 'string').slice(0, 10) : [];
     const m = localStorage.getItem('catculatorMode');
     if (m === 'nums' || m === 'cats') mode = m;
     const q = new URLSearchParams(location.search).get('mode');
@@ -470,7 +541,78 @@ function setMode(m) {
   syncSettings();
   if (!document.getElementById('pong')) paint();
 }
+function canVibrate() { return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'; }
+function buzz() { if (vibeOn && canVibrate()) { try { navigator.vibrate(8); } catch (e) {} } }
+function setVibe(on) {
+  vibeOn = on;
+  try { localStorage.setItem('catculatorVibe', on ? '1' : '0'); } catch (e) {}
+  syncSettings();
+}
+function plainStr(v) { return String(v).replace(/^-/, '−'); }
+function addHistory(a, o, b, r) {
+  calcHist.unshift({ e: `${plainNum(a)} ${o} ${plainNum(b)}`, a: String(r) });
+  calcHist = calcHist.slice(0, 10);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(calcHist)); } catch (e) {}
+  renderHistory();
+}
+function clearHistory() {
+  calcHist = [];
+  try { localStorage.setItem(HIST_KEY, '[]'); } catch (e) {}
+  renderHistory();
+}
+function renderHistory() {
+  const ul = document.getElementById('histList');
+  if (!ul) return;
+  ul.innerHTML = calcHist.length
+    ? calcHist.map((h, i) => `<li><button data-hist="${i}">${h.e} = <b>${plainNum(h.a)}</b></button></li>`).join('')
+    : '<li class="empty">No answers yet.</li>';
+}
+function loadHistory(i) {
+  const h = calcHist[i];
+  if (!h) return;
+  if (op && !fresh) replaceLine(N(h.a)); else pushLine(N(h.a));
+  current = h.a;
+  fresh = !op;
+  paint();
+  closeSettings();
+}
+function copyText(t) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(() => legacyCopy(t));
+  } catch (e) {}
+  legacyCopy(t);
+  return Promise.resolve();
+}
+function legacyCopy(t) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  } catch (e) {}
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+}
+function copyAnswer() {
+  if (document.getElementById('pong') || current === 'Err') return false;
+  const v = String(Number(current)) === 'NaN' ? '0' : current.replace(/\.$/, '');
+  copyText(v);
+  toast('Copied ' + plainNum(v));
+  buzz();
+  return v;
+}
+let pressTimer = null;
+function pressStart() { if (document.getElementById('pong')) return; clearTimeout(pressTimer); pressTimer = setTimeout(copyAnswer, 500); }
+function pressEnd() { clearTimeout(pressTimer); pressTimer = null; }
 function syncSettings() {
+  document.querySelectorAll('[data-vib]').forEach(b => b.classList.toggle('on', (b.dataset.vib === 'on') === vibeOn));
+  const vc = document.getElementById('vibeCard');
+  if (vc && vc.style) vc.style.display = canVibrate() ? '' : 'none';
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   document.querySelectorAll('[data-snd]').forEach(b => b.classList.toggle('on', (b.dataset.snd === 'off') === muted));
 }
@@ -479,7 +621,7 @@ function setMuted(m) {
   try { localStorage.setItem('catculatorMuted', m ? '1' : '0'); } catch (e) {}
   syncSettings();
 }
-function openSettings() { stopPong(); syncSettings(); document.getElementById('sheet').classList.add('open'); }
+function openSettings() { stopPong(); syncSettings(); renderHistory(); document.getElementById('sheet').classList.add('open'); }
 function closeSettings() { document.getElementById('sheet').classList.remove('open'); }
 function clearSaved() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
@@ -584,6 +726,7 @@ function equals() {
     b = Number(current);
     lastOp = op; lastB = b;
   }
+  const histA = stored, histOp = op, histB = b;
   let r = stored;
   if (op === '+') r = stored + b;
   if (op === '−') r = stored - b;
@@ -593,6 +736,7 @@ function equals() {
   else if (Number.isFinite(r)) { blink(); purr(); }
   current = fmt(r);
   if (current === 'Err') { lastOp = null; lastB = null; }
+  else addHistory(histA, histOp, histB, current);
   pushLine(current === 'Err' ? ERR : N(current));
   op = null;
   stored = null;
@@ -863,6 +1007,7 @@ function startPong() {
 document.querySelectorAll('button.key, button.pawbtn[data-key]').forEach(btn => {
   btn.addEventListener('click', () => {
     const k = btn.dataset.key;
+    buzz();
     if (k >= '0' && k <= '9') secret = (secret + k).slice(-3);
     else if (k === '=' && secret === '123') dance();
     else if (k !== '=') secret = '';
@@ -881,6 +1026,12 @@ document.querySelectorAll('button.key, button.pawbtn[data-key]').forEach(btn => 
 restore();
 setMode(mode);
 document.getElementById('gearBtn').addEventListener('click', openSettings);
+document.querySelectorAll('[data-vib]').forEach(b => b.addEventListener('click', () => setVibe(b.dataset.vib === 'on')));
+document.getElementById('clearHist').addEventListener('click', clearHistory);
+document.getElementById('histList').addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-hist]'); if (b) loadHistory(Number(b.dataset.hist)); });
+screen.addEventListener('pointerdown', pressStart);
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => screen.addEventListener(ev, pressEnd));
+screen.addEventListener('contextmenu', e => e.preventDefault());
 document.getElementById('closeSet').addEventListener('click', closeSettings);
 document.getElementById('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSettings(); });
 document.getElementById('clearSaved').addEventListener('click', clearSaved);
