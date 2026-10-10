@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc8">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc8">
+<link rel="manifest" href="manifest.json?v=cc13">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc13">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -80,6 +80,8 @@
     flex-wrap: wrap;
   }
   .line.now { color: var(--yellow2); }
+  .line .opline { font-size: 21px; font-weight: 800; line-height: 1; }
+  .hist .hop { font-weight: 700; }
   .cats { display: flex; flex-wrap: wrap; gap: 0; justify-content: flex-end; transform: translateX(var(--tilt, 0px)); }
   .kitty {
     width: 28px;
@@ -156,6 +158,7 @@
     75% { left: 8px; top: calc(100% - 22px); }
     100% { left: 8px; top: 8px; }
   }
+  button.key.op.sym { color: var(--opc); font-size: 33px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0 0 3px; }
   button.key.eq { background: var(--red); color: white; }
   button.key.wide { grid-column: span 2; }
   .rear {
@@ -362,19 +365,19 @@
     <button class="key op" data-key="C">C</button>
     <button class="key op" data-key="±" aria-label="Change sign">±</button>
     <button class="key op" data-key="%" aria-label="Percent">%</button>
-    <button class="key op" data-key="÷">÷</button>
+    <button class="key op sym" data-key="÷" style="--opc:#2ec8ff">÷</button>
     <button class="key" data-key="7">7</button>
     <button class="key" data-key="8">8</button>
     <button class="key" data-key="9">9</button>
-    <button class="key op" data-key="×">×</button>
+    <button class="key op sym" data-key="×" style="--opc:#b8f42c">×</button>
     <button class="key" data-key="4">4</button>
     <button class="key" data-key="5">5</button>
     <button class="key" data-key="6">6</button>
-    <button class="key op" data-key="−">−</button>
+    <button class="key op sym" data-key="−" style="--opc:#a77bff">−</button>
     <button class="key" data-key="1">1</button>
     <button class="key" data-key="2">2</button>
     <button class="key" data-key="3">3</button>
-    <button class="key op" data-key="+">+</button>
+    <button class="key op sym" data-key="+" style="--opc:#ff4fe0">+</button>
     <button class="key wide" data-key="0">0</button>
     <button class="key" data-key=".">.</button>
     <button class="key eq" data-key="=">=</button>
@@ -510,10 +513,13 @@ function plainNum(v) {
   const whole = w.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return (neg ? '−' : '') + whole + (body.includes('.') ? '.' + (f || '') : '');
 }
+const OP_COLORS = { '÷': '#2ec8ff', '×': '#b8f42c', '−': '#a77bff', '+': '#ff4fe0' };
+function opSpan(o, cls) { return `<span class="math ${cls}" style="color:${OP_COLORS[o] || 'inherit'}">${o}</span>`; }
+function colorOps(text) { return String(text).replace(/ ([÷×−+]) /g, (m, o) => ' ' + opSpan(o, 'hop') + ' '); }
 function render(l) {
   if (typeof l === 'string') return l;
   if (!l || l.e) return '<span class="math">Err</span>';
-  if (l.o) return `<span class="math">${l.o}</span>`;
+  if (l.o) return opSpan(l.o, 'opline');
   return mode === 'nums' ? `<span class="math num">${plainNum(l.n)}</span>` : lineFor(l.n);
 }
 function save() {
@@ -579,7 +585,7 @@ function renderHistory() {
   const ul = document.getElementById('histList');
   if (!ul) return;
   ul.innerHTML = calcHist.length
-    ? calcHist.map((h, i) => `<li><button data-hist="${i}">${h.e} = <b>${plainNum(h.a)}</b></button></li>`).join('')
+    ? calcHist.map((h, i) => `<li><button data-hist="${i}">${colorOps(h.e)} = <b>${plainNum(h.a)}</b></button></li>`).join('')
     : '<li class="empty">No answers yet.</li>';
 }
 function loadHistory(i) {
@@ -817,6 +823,52 @@ function stopPong() {
     paint();
   }
 }
+// Ginger tabby paw (front view, toes up). cx = center, top = top of the toes. Width 112, height ~92.
+function paintPaw(ctx, cx, top, squished) {
+  const sq = squished ? 2 : 0;
+  const ell = (x, y, rx, ry) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); };
+  const toes = [[-41, 25, 15, 14], [-14, 16, 16, 16], [14, 16, 16, 16], [41, 25, 15, 14]];
+  const parts = () => {
+    const out = [[cx, top + 56, 47, 38]];
+    toes.forEach(([dx, dy, rx, ry]) => out.push([cx + dx, top + dy + sq, rx, ry - sq]));
+    return out;
+  };
+  // merged silhouette: thick outline pass under, fill pass over
+  ctx.save();
+  ctx.fillStyle = '#5a2a14';
+  parts().forEach(([x, y, rx, ry]) => { ell(x, y, rx + 2.4, ry + 2.4); ctx.fill(); });
+  const fur = ctx.createLinearGradient(0, top, 0, top + 92);
+  fur.addColorStop(0, '#f4ad62'); fur.addColorStop(.5, '#e08a3c'); fur.addColorStop(1, '#c4692a');
+  ctx.fillStyle = fur;
+  parts().forEach(([x, y, rx, ry]) => { ell(x, y, rx, ry); ctx.fill(); });
+  // light toe tips
+  ctx.fillStyle = 'rgba(255,228,190,.75)';
+  toes.forEach(([dx, dy, rx, ry]) => { ell(cx + dx, top + dy - ry * .45 + sq, rx * .62, ry * .38); ctx.fill(); });
+  // tabby stripes on the back of the paw (sides of the palm)
+  ctx.strokeStyle = 'rgba(122,58,18,.75)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  [[-44, 44, -33, 49], [-46, 56, -34, 60], [44, 44, 33, 49], [46, 56, 34, 60]].forEach(([a, b, c, d]) => {
+    ctx.beginPath(); ctx.moveTo(cx + a, top + b); ctx.quadraticCurveTo(cx + (a + c) / 2, top + b - 1, cx + c, top + d); ctx.stroke();
+  });
+  // toe beans
+  ctx.fillStyle = '#f7a1b3'; ctx.strokeStyle = '#d9718a'; ctx.lineWidth = 1.3;
+  toes.forEach(([dx, dy, rx, ry]) => { ell(cx + dx, top + dy + 3 + sq, rx * .5 * (sq ? 1.25 : 1), ry * .55 * (sq ? .62 : 1)); ctx.fill(); ctx.stroke(); });
+  // main pad (trefoil heart)
+  const my = top + 50;
+  ctx.beginPath();
+  ctx.moveTo(cx - 24, my + 6);
+  ctx.bezierCurveTo(cx - 24, my - 10, cx - 12, my - 16, cx, my - 16);
+  ctx.bezierCurveTo(cx + 12, my - 16, cx + 24, my - 10, cx + 24, my + 6);
+  ctx.bezierCurveTo(cx + 25, my + 15, cx + 13, my + 17, cx + 9, my + 12);
+  ctx.bezierCurveTo(cx + 5, my + 18, cx - 5, my + 18, cx - 9, my + 12);
+  ctx.bezierCurveTo(cx - 13, my + 17, cx - 25, my + 15, cx - 24, my + 6);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // shines
+  ctx.fillStyle = 'rgba(255,255,255,.8)';
+  ell(cx - 11, my - 6, 5.5, 2.6); ctx.fill();
+  toes.forEach(([dx, dy, rx, ry]) => { ell(cx + dx - 2.5, top + dy + 1 + sq, 2, 1.4); ctx.fill(); });
+  ctx.restore();
+}
 function startPong() {
   if (!meowCtx) {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -836,7 +888,8 @@ function startPong() {
   const fish = { x: -24, y: 52, vx: 1.7, wait: 120, color: '#f5c518' };
   const fish2 = { x: w + 24, y: 72, vx: -1.9, wait: 180, color: '#7aa2ff' };
   let pop = null;
-  const paddle = { w: 118, h: 36, x: w / 2 - 59 };
+  const paddle = { w: 112, h: 50, x: w / 2 - 56 };
+  let squish = 0;
   let treats = 0;
   let lives = 9;
   let hold = 180;
@@ -859,17 +912,9 @@ function startPong() {
   canvas.addEventListener('pointermove', e => aim(e.clientX));
   canvas.addEventListener('pointerdown', e => aim(e.clientX));
   function drawPaw() {
-    ctx.fillStyle = '#ffe56a';
-    const px = paddle.x;
-    const py = h - paddle.h - 2;
-    ctx.beginPath();
-    ctx.ellipse(px + 59, py + 24, 42, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-    [[22, 8], [42, 2], [62, 2], [82, 8]].forEach(([tx, ty]) => {
-      ctx.beginPath();
-      ctx.arc(px + tx, py + ty, 9, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    // Hit box = toe span: x paddle.x..+w, top of toes = h - paddle.h. Lower part of the paw runs off the bottom.
+    paintPaw(ctx, paddle.x + paddle.w / 2, h - paddle.h, squish > 0);
+    if (squish > 0) squish--;
   }
   function frame() {
     ctx.fillStyle = '#161616';
@@ -954,9 +999,10 @@ function startPong() {
     ball.y += ball.vy;
     if (ball.x < ball.r || ball.x > w - ball.r) ball.vx *= -1;
     if (ball.y < ball.r) ball.vy *= -1;
-    if (ball.y > h - paddle.h - ball.r && ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.vy > 0) {
+    if (ball.y > h - paddle.h - ball.r && ball.y < h - paddle.h + 14 && ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.vy > 0) {
       ball.vy = -Math.abs(ball.vy) - 0.15;
       ball.y = h - paddle.h - ball.r;
+      squish = 7;
       treats++;
       meow();
     } else if (ball.y > h + 10 && !boom) {
