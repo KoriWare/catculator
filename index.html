@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc17">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc17">
+<link rel="manifest" href="manifest.json?v=cc18">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -23,6 +23,8 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #0c0c0c; color: var(--cream); height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
   html { position: fixed; inset: 0; }
+  html, body { overflow-x: hidden; max-width: 100vw; }
+  .cat { min-width: 0; max-width: 100%; }
   button, .key, .pawbtn, .gearhit, .screen { touch-action: manipulation; }
   .sheet { touch-action: pan-y; }
   #pong { touch-action: none; }
@@ -31,6 +33,7 @@
     height: 100vh;
     height: 100dvh;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     place-items: center;
     padding: calc(6px + env(safe-area-inset-top)) calc(6px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left));
   }
@@ -57,6 +60,8 @@
   .kicker { display: none; }
   .screen {
     position: relative;
+    min-width: 0;
+    max-width: 100%;
     background: #161616;
     color: var(--yellow2);
     border-radius: 18px;
@@ -82,7 +87,7 @@
   }
   .line.now { color: var(--yellow2); }
   .line .gap { display: inline-block; width: 4px; }
-  .line.expr { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; justify-content: flex-start; }
+  .line.expr { min-width: 0; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; justify-content: flex-start; }
   .line.expr::-webkit-scrollbar { display: none; }
   .line.expr .row { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; white-space: nowrap; }
   .tagcat { display: inline-flex; align-items: center; flex: none; }
@@ -591,13 +596,20 @@ function restore() {
 }
 // Group entries into display rows: an operator and the number typed after it stay on the
 // same row as the number before them, so 5 + 3 shows on one line; results start a new row.
+function startsRow(list, i) {
+  const l = list[i], prev = list[i - 1];
+  if (!l || l.mid) return false;
+  return !(l.o || (l.n != null && prev && prev.o));
+}
 function rowsOf(list) {
   const rows = [];
   list.forEach((l, i) => {
     if (l && l.mid) return; // running total from a chained operator: the expression stays on one line
     const prev = list[i - 1];
     const join = rows.length && l && (l.o || (l.n != null && prev && prev.o));
-    if (join) rows[rows.length - 1].push(l); else rows.push([l]);
+    if (join) rows[rows.length - 1].push(l);
+    else if (l && (l.o || (l.n != null && prev && prev.o)) && !rows.length) return; // orphan tail of a trimmed expression
+    else rows.push([l]);
   });
   return rows;
 }
@@ -733,7 +745,18 @@ function clearSaved() {
 }
 function pushLine(entry) {
   lines.push(entry);
-  if (lines.length > 20) lines = lines.slice(-20);
+  if (lines.length > 40) {
+    // trim old history only at a row boundary, so an expression never loses its start
+    // (cutting mid-expression is what left a stray "÷ 2" line on its own)
+    let cut = lines.length - 40;
+    while (cut < lines.length && !startsRow(lines, cut)) cut++;
+    if (cut < lines.length) lines = lines.slice(cut);
+    else { // one huge expression: keep it whole (find where it starts)
+      let st = lines.length - 1;
+      while (st > 0 && !startsRow(lines, st)) st--;
+      lines = lines.slice(st);
+    }
+  }
   paint();
 }
 function replaceLine(entry) {
