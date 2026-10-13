@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc15">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc15">
+<link rel="manifest" href="manifest.json?v=cc16">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -56,6 +56,7 @@
   }
   .kicker { display: none; }
   .screen {
+    position: relative;
     background: #161616;
     color: var(--yellow2);
     border-radius: 18px;
@@ -80,6 +81,22 @@
     flex-wrap: wrap;
   }
   .line.now { color: var(--yellow2); }
+  .line .gap { display: inline-block; width: 4px; }
+  .line.expr { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; justify-content: flex-start; }
+  .line.expr::-webkit-scrollbar { display: none; }
+  .line.expr .row { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; white-space: nowrap; }
+  .tagcat { display: inline-flex; align-items: center; flex: none; }
+  .tagcat .cats { flex: none; }
+  .tagcat .kitty { animation: none; }
+  .tagcat .tag { position: relative; margin-left: -3px; background: var(--yellow); color: #111; font-size: 11px; font-weight: 800; line-height: 1; padding: 2px 4px 2px 6px; border-radius: 3px 6px 6px 3px; white-space: nowrap; }
+  .tagcat .tag::before { content: ''; position: absolute; left: 2px; top: 50%; width: 2px; height: 2px; margin-top: -1px; border-radius: 50%; background: #111; }
+  .tagcat.neg { flex-direction: row-reverse; }
+  .tagcat.neg .tag { margin-left: 0; margin-right: -3px; padding: 2px 6px 2px 4px; border-radius: 6px 3px 3px 6px; }
+  .tagcat.neg .tag::before { left: auto; right: 2px; }
+  .hist .tagcat .tag { font-size: 11px; }
+  .hist .hrow { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+  .bs { position: absolute; top: 6px; left: 8px; width: 34px; height: 26px; border: 0; border-radius: 8px; background: rgba(255,229,106,.12); color: var(--yellow2); font: inherit; font-size: 16px; line-height: 26px; padding: 0; cursor: pointer; z-index: 2; touch-action: manipulation; }
+  .bs:active { background: rgba(255,229,106,.3); }
   .line .opline { font-size: 21px; font-weight: 800; line-height: 1; }
   .hist .hop { font-weight: 700; }
   .cats { display: flex; flex-wrap: wrap; gap: 0; justify-content: flex-end; transform: translateX(var(--tilt, 0px)); }
@@ -130,6 +147,11 @@
   .brand-title { margin: 2px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; color: #fff; }
   .brand-title span { color: #f2a66f; }
   .brand h2 { font-size: 13px !important; color: #8d8d8d !important; font-weight: 600; margin: 2px 0 0 !important; letter-spacing: .04em; }
+  .pwr { position: absolute; left: 50%; top: 62%; transform: translate(-50%, -50%); width: 26px; height: 13px; padding: 0; border: 1.5px solid #0068B7; border-radius: 7px; background: #1c1c1c; cursor: pointer; pointer-events: auto; z-index: 3; touch-action: manipulation; }
+  .pwr .knob { position: absolute; top: 1px; left: 1px; width: 8px; height: 8px; border-radius: 50%; background: #8d8d8d; transition: left .15s, background .15s; }
+  .pwr.on .knob { left: 14px; background: #ffe56a; box-shadow: 0 0 4px #ffe56a; }
+  .pwr::before { content: ''; position: absolute; inset: -8px -6px; }
+  .pxfx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; border-radius: 14px; pointer-events: none; image-rendering: pixelated; }
   .paws { display: flex; justify-content: space-between; margin: -6px -10px -14px; position: relative; z-index: 2; pointer-events: none; }
   .keys {
     display: grid;
@@ -242,6 +264,10 @@
     animation: fall 2.4s linear forwards;
     pointer-events: auto;
   }
+  .treat-egg, .treat-candycorn, .treat-present { width: 20px; height: 22px; }
+  .treat-egg svg, .treat-candycorn svg, .treat-present svg { width: 100%; height: 100%; display: block; }
+  .confetti { animation: confetti 2.8s linear infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes confetti { 0% { transform: translateY(0) rotate(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(280px) rotate(540deg); opacity: 0; } }
   @keyframes fall { to { transform: translateY(110vh); } }
   .kitty.drop { animation: drop .6s ease-in both; }
   @keyframes drop { to { transform: translateY(40px); opacity: 0; } }
@@ -318,6 +344,7 @@
 
   <div class="paws">
     <div class="catsio" aria-hidden="true">CATSIO</div>
+    <button class="pwr" id="pwrBtn" role="switch" aria-checked="true" aria-label="Power switch"><span class="knob"></span></button>
     <span class="pawbox"><svg class="pawart" viewBox="0 0 100 66" width="150" height="99" aria-label="Left front paw">
       <defs><radialGradient id="gLe150" cx="50%" cy="35%" r="70%"><stop offset="0%" stop-color="#fffdf7"/><stop offset="100%" stop-color="#f3e3cc"/></radialGradient></defs>
       <g stroke="#d9a066" stroke-width="1.6" fill="url(#gLe150)">
@@ -497,17 +524,17 @@ function catSpan(n, faceLeft) {
   const count = Math.max(0, Math.floor(Math.abs(Number(n))) || 0);
   if (!count) return '<span class="math">0</span>';
   const wrap = faceLeft ? 'cats flip' : 'cats';
-  if (count > 10 || (faceLeft && count > 9)) {
-    const one = CAT.replace('class="kitty"', 'class="kitty"');
-    const kitten = `<span class="${wrap}">${one}</span>`;
-    return faceLeft
-      ? `${kitten}<span class="math">(${count >= 1e21 ? BigInt(count).toString() : count})</span>`
-      : `<span class="math">(${count >= 1e21 ? BigInt(count).toString() : count})</span>${kitten}`;
-  }
+  if (count > 10 || (faceLeft && count > 9)) return tagCat(count >= 1e21 ? BigInt(count).toString() : String(count), faceLeft);
   const cats = Array.from({length: count}, (_, i) =>
     CAT.replace('class="kitty"', `class="kitty" style="animation-delay:${i * 0.08}s"`)
   ).join('');
   return `<span class="${wrap}">${cats}</span>`;
+}
+// One small cat wearing a tag with the full number (replaces the old "cat (number)" style).
+function tagCat(v, neg) {
+  const s = String(v);
+  const isNeg = neg || s.startsWith('-');
+  return `<span class="tagcat${isNeg ? ' neg' : ''}"><span class="${isNeg ? 'cats flip' : 'cats'}">${CAT}</span><span class="tag">${plainNum(s.replace(/^-/, '') === s ? s : s)}</span></span>`;
 }
 // Lines are stored as raw entries ({n: value} | {o: op} | {e: 1}) and rendered per mode.
 function N(v) { return { n: String(v) }; }
@@ -524,11 +551,11 @@ function plainNum(v) {
 const OP_COLORS = { '÷': '#2ec8ff', '×': '#b8f42c', '−': '#a77bff', '+': '#ff4fe0' };
 function opSpan(o, cls) { return `<span class="math ${cls}" style="color:${OP_COLORS[o] || 'inherit'}">${o}</span>`; }
 function colorOps(text) { return String(text).replace(/ ([÷×−+]) /g, (m, o) => ' ' + opSpan(o, 'hop') + ' '); }
-function render(l) {
+function render(l, tagged) {
   if (typeof l === 'string') return l;
   if (!l || l.e) return '<span class="math">Err</span>';
   if (l.o) return opSpan(l.o, 'opline');
-  return mode === 'nums' ? `<span class="math num">${plainNum(l.n)}</span>` : lineFor(l.n);
+  return mode === 'nums' ? `<span class="math num">${plainNum(l.n)}</span>` : lineFor(l.n, tagged);
 }
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({ lines, current, stored, op, fresh, lastOp, lastB })); } catch (e) {}
@@ -555,11 +582,27 @@ function restore() {
     }
   } catch (e) {}
 }
+// Group entries into display rows: an operator and the number typed after it stay on the
+// same row as the number before them, so 5 + 3 shows on one line; results start a new row.
+function rowsOf(list) {
+  const rows = [];
+  list.forEach((l, i) => {
+    if (l && l.mid) return; // running total from a chained operator: the expression stays on one line
+    const prev = list[i - 1];
+    const join = rows.length && l && (l.o || (l.n != null && prev && prev.o));
+    if (join) rows[rows.length - 1].push(l); else rows.push([l]);
+  });
+  return rows;
+}
 function paint() {
-  const view = lines.slice(-5);
-  screen.innerHTML = view.map((l, i) =>
-    `<div class="line${i === view.length - 1 ? ' now' : ''}">${render(l)}</div>`
+  const view = rowsOf(lines).slice(-5);
+  screen.innerHTML = view.map((row, i) =>
+    row.length > 1
+      ? `<div class="line expr${i === view.length - 1 ? ' now' : ''}"><span class="row">${row.map(l => render(l, true)).join('<span class="gap"></span>')}</span></div>`
+      : `<div class="line${i === view.length - 1 ? ' now' : ''}">${render(row[0])}</div>`
   ).join('') || '<div class="line now"><span class="math">0</span></div>';
+  if (screen.querySelectorAll) screen.querySelectorAll('.line.expr').forEach(el => { el.scrollLeft = el.scrollWidth; });
+  if (window.__bs && screen.appendChild && !document.getElementById('pong')) screen.appendChild(window.__bs);
   if (!document.getElementById || !document.getElementById('pong')) save();
 }
 function setMode(m) {
@@ -589,11 +632,15 @@ function clearHistory() {
   try { localStorage.setItem(HIST_KEY, '[]'); } catch (e) {}
   renderHistory();
 }
+function histCats(h) {
+  const parts = String(h.e).split(' ').map(t => OP_COLORS[t] ? opSpan(t, 'hop') : tagCat(t.replace(/,/g, '').replace('−', '-')));
+  return `<span class="hrow">${parts.join(' ')} = ${tagCat(h.a)}</span>`;
+}
 function renderHistory() {
   const ul = document.getElementById('histList');
   if (!ul) return;
   ul.innerHTML = calcHist.length
-    ? calcHist.map((h, i) => `<li><button data-hist="${i}">${colorOps(h.e)} = <b>${plainNum(h.a)}</b></button></li>`).join('')
+    ? calcHist.map((h, i) => `<li><button data-hist="${i}">${mode === 'cats' ? histCats(h) : `${colorOps(h.e)} = <b>${plainNum(h.a)}</b>`}</button></li>`).join('')
     : '<li class="empty">No answers yet.</li>';
 }
 function loadHistory(i) {
@@ -699,6 +746,14 @@ function percent() {
   fresh = false;
   if (pending) pushLine(N(current)); else replaceLine(N(current));
 }
+function backspace() {
+  if (current === 'Err') { clearAll(); return; }
+  if (fresh) return;
+  let c = current.slice(0, -1);
+  if (c === '' || c === '-' || c === '-0') c = '0';
+  current = c;
+  replaceLine(N(current));
+}
 function inputDigit(d) {
   if (fresh) {
     current = d;
@@ -712,8 +767,9 @@ function inputDigit(d) {
     replaceLine(N(current));
   }
 }
-function lineFor(value) {
+function lineFor(value, tagged) {
   const s = String(value);
+  if (tagged) return tagCat(s);
   const neg = s.startsWith('-');
   const body = neg ? s.slice(1) : s;
   const [whole, frac] = body.split('.');
@@ -736,7 +792,7 @@ function inputDot() {
 function setOp(next) {
   if (current === 'Err') return;
   if (op && fresh) { op = next; replaceLine(O(next)); return; }
-  if (op && !fresh) equals();
+  if (op && !fresh) { equals(); if (current !== 'Err' && lines.length) lines[lines.length - 1].mid = 1; }
   if (current === 'Err') return;
   stored = Number(current);
   op = next;
@@ -1175,17 +1231,44 @@ document.getElementById('clearSaved').addEventListener('click', clearSaved);
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('[data-snd]').forEach(b => b.addEventListener('click', () => setMuted(b.dataset.snd === 'off')));
 document.getElementById('modeBtn').addEventListener('click', () => setMode(mode === 'cats' ? 'nums' : 'cats'));
+(() => {
+  const b = document.createElement && document.createElement('button');
+  if (!b) return;
+  b.className = 'bs'; b.id = 'bsBtn'; b.textContent = '⌫';
+  if (b.setAttribute) b.setAttribute('aria-label', 'Backspace');
+  b.addEventListener('pointerdown', e => { e.stopPropagation(); pressEnd(); });
+  b.addEventListener('click', e => { e.stopPropagation(); buzz(); stopPong(); backspace(); });
+  window.__bs = b;
+  paint();
+})();
+// swipe left or right across the display also deletes the last digit
+let swipeX = null;
+screen.addEventListener('pointerdown', e => { swipeX = document.getElementById('pong') ? null : e.clientX; });
+screen.addEventListener('pointerup', e => { if (swipeX != null && Math.abs(e.clientX - swipeX) > 40) { pressEnd(); backspace(); } swipeX = null; });
+// ---- test overrides: ?date=YYYY-MM-DD and ?hour=N ----
+function qp(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+function nowDate() {
+  const d = new Date();
+  const q = qp('date');
+  const m = q && /^(\d{4})-(\d{2})-(\d{2})$/.exec(q);
+  if (m) d.setFullYear(+m[1], +m[2] - 1, +m[3]);
+  const h = qp('hour');
+  if (h != null && h !== '' && !isNaN(+h)) d.setHours(+h, 0, 0, 0);
+  return d;
+}
+function isNight(d) { const h = (d || nowDate()).getHours(); return h >= 22 || h < 6; }
 let idle;
 function nap(on) {
   document.body.classList.toggle('asleep', on);
   document.querySelector('.cat').classList.toggle('night', on);
+  const sleepy = on || isNight();
   ['sleepL', 'sleepR', 'zzz'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.setAttribute('opacity', on ? '1' : '0');
+    if (el) el.setAttribute('opacity', sleepy ? '1' : '0');
   });
   ['pupilL', 'pupilR'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.setAttribute('opacity', on ? '0' : '1');
+    if (el) el.setAttribute('opacity', sleepy ? '0' : '1');
   });
 }
 function wake() {
@@ -1195,6 +1278,7 @@ function wake() {
 }
 document.addEventListener('pointerdown', wake);
 wake();
+setInterval(() => { if (!document.body.classList.contains('asleep')) nap(false); dress(); }, 60000);
 function blink() {
   ['pupilL', 'pupilR'].forEach(id => {
     const el = document.getElementById(id);
@@ -1231,24 +1315,71 @@ function purr() {
     o.start(t); o.stop(t + 0.5);
   } catch (e) {}
 }
+// Easter Sunday, Gregorian calendar (anonymous Gregorian / Meeus-Jones-Butcher computus)
+function easterDate(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return { month, day };
+}
+function holidayKind(d) {
+  const m = d.getMonth() + 1, day = d.getDate();
+  const e = easterDate(d.getFullYear());
+  if (m === e.month && day === e.day) return 'easter';
+  if (m === 10 && day === 29) return 'party';
+  if (m === 10 && day === 31) return 'pumpkin';
+  if (m === 12 && day <= 25) return 'santa';
+  return '';
+}
+function holidayHat(d) {
+  const m = d.getMonth() + 1, day = d.getDate();
+  if (holidayKind(d) === 'easter') // Easter Sunday: bunny ears
+    return '<g id="hat-bunny"><path d="M138 84 Q180 64 222 84" fill="none" stroke="#ff5fa2" stroke-width="7" stroke-linecap="round"/><g transform="rotate(-12 156 74)"><ellipse cx="156" cy="34" rx="15" ry="42" fill="#fffaf2" stroke="#cfc6b8" stroke-width="2"/><ellipse cx="156" cy="38" rx="7" ry="30" fill="#f7a1b3"/></g><g transform="rotate(14 206 74)"><ellipse cx="206" cy="34" rx="15" ry="42" fill="#fffaf2" stroke="#cfc6b8" stroke-width="2"/><ellipse cx="206" cy="38" rx="7" ry="30" fill="#f7a1b3"/></g></g>';
+  if (m === 10 && day === 29) // National Cat Day: party hat
+    return '<g id="hat-party"><path d="M146 84 L182 6 L218 84 Z" fill="#f5c518" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M172 28 L192 28 M163 48 L201 48 M154 68 L210 68" stroke="#111" stroke-width="7" stroke-linecap="round"/><circle cx="182" cy="8" r="10" fill="#fff6d6" stroke="#111" stroke-width="2"/><path d="M176 4 L188 12 M188 4 L176 12 M182 -1 L182 17" stroke="#111" stroke-width="1.5"/><g class="confetti-g"><rect class="confetti" x="40" y="-10" width="5" height="8" rx="1" fill="#ff5fa2" style="animation-delay:0s"/><rect class="confetti" x="84" y="-10" width="5" height="8" rx="1" fill="#7aa2ff" style="animation-delay:0.7s"/><rect class="confetti" x="122" y="-10" width="5" height="8" rx="1" fill="#b8f42c" style="animation-delay:1.4s"/><rect class="confetti" x="238" y="-10" width="5" height="8" rx="1" fill="#a77bff" style="animation-delay:0.35s"/><rect class="confetti" x="276" y="-10" width="5" height="8" rx="1" fill="#2ec8ff" style="animation-delay:1.05s"/><rect class="confetti" x="318" y="-10" width="5" height="8" rx="1" fill="#ff5fa2" style="animation-delay:1.75s"/><rect class="confetti" x="60" y="-10" width="5" height="8" rx="1" fill="#f5c518" style="animation-delay:2.1s"/><rect class="confetti" x="300" y="-10" width="5" height="8" rx="1" fill="#b8f42c" style="animation-delay:2.45s"/></g></g>';
+  if (m === 10 && day === 31) // Halloween: pumpkin
+    return '<g id="hat-pumpkin"><path d="M180 38 Q178 22 188 14" fill="none" stroke="#2f7a2a" stroke-width="6" stroke-linecap="round"/><path d="M190 22 Q204 14 210 24 Q198 28 190 22 Z" fill="#3cb043"/><ellipse cx="150" cy="62" rx="22" ry="26" fill="#f2680c" stroke="#7a2e06" stroke-width="2.5"/><ellipse cx="210" cy="62" rx="22" ry="26" fill="#f2680c" stroke="#7a2e06" stroke-width="2.5"/><ellipse cx="180" cy="62" rx="24" ry="28" fill="#ff7a18" stroke="#7a2e06" stroke-width="2.5"/><path d="M164 58 L172 50 L176 60 Z M196 58 L188 50 L184 60 Z" fill="#2a1406"/><path d="M162 72 Q180 86 198 72 L192 76 L186 72 L180 78 L174 72 L168 76 Z" fill="#2a1406"/></g>';
+  if (m === 12 && day <= 25) // Dec 1-25: Santa hat
+    return '<g id="hat-santa"><path d="M138 86 Q150 28 196 18 Q236 14 252 52 Q228 36 214 50 Q220 66 222 86 Z" fill="#d3122a" stroke="#7a0a14" stroke-width="2.5" stroke-linejoin="round"/><circle cx="254" cy="58" r="13" fill="#fffaf2" stroke="#cfc6b8" stroke-width="1.5"/><rect x="128" y="76" width="104" height="22" rx="11" fill="#fffaf2" stroke="#cfc6b8" stroke-width="1.5"/></g>';
+  return '';
+}
+// Maria's weekday looks for <g id="daily"> (head viewBox 0 0 360 280). 0=Sun.
+const DAILY_LOOKS = [
+ // Sun: sleep mask pushed up
+ '<path d="M110 96 Q180 74 250 96 L246 118 Q180 100 114 118 Z" fill="#7b5cc4" stroke="#3a2a66" stroke-width="2"/><path d="M136 104 Q150 112 162 104 M198 104 Q210 112 224 104" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M110 104 L72 112 M250 104 L288 112" stroke="#3a2a66" stroke-width="3"/>',
+ // Mon: yellow hard hat
+ '<path d="M118 84 Q120 30 180 28 Q240 30 242 84 Z" fill="#ffd21f" stroke="#1b1410" stroke-width="3"/><rect x="100" y="80" width="160" height="12" rx="6" fill="#ffd21f" stroke="#1b1410" stroke-width="3"/><rect x="172" y="30" width="16" height="52" fill="#1b1410"/>',
+ // Tue: teal hair bow by left ear
+ '<g transform="translate(112 84) rotate(-20)"><path d="M0 0 L-30 -18 Q-36 0 -30 18 Z M0 0 L30 -18 Q36 0 30 18 Z" fill="#14b8a6" stroke="#0b5a52" stroke-width="2.5" stroke-linejoin="round"/><circle r="8" fill="#0e8f82"/></g>',
+ // Wed: flower crown
+ '<path d="M104 92 Q180 58 256 92" fill="none" stroke="#3f8f3a" stroke-width="5"/>'+[[110,88,'#ff7aa8'],[138,74,'#ffd21f'],[166,66,'#fff'],[194,66,'#ff7aa8'],[222,74,'#ffd21f'],[250,88,'#fff']].map(([x,y,c])=>`<g transform="translate(${x} ${y})">${[0,72,144,216,288].map(a=>`<ellipse rx="5" ry="9" cy="-7" fill="${c}" transform="rotate(${a})"/>`).join('')}<circle r="4" fill="#e8a020"/></g>`).join(''),
+ // Thu: pink heart sunglasses
+ ['126','234'].map(x=>`<path transform="translate(${x} 146)" d="M0 -10 C-12 -30 -42 -20 -34 4 L0 30 L34 4 C42 -20 12 -30 0 -10 Z" fill="#ff5fa2" fill-opacity=".85" stroke="#b0145e" stroke-width="3"/>`).join('')+'<path d="M160 140 Q180 132 200 140" fill="none" stroke="#b0145e" stroke-width="4"/>',
+ // Fri: gold tiara
+ '<path d="M128 90 L136 60 L152 78 L166 46 L180 70 L194 46 L208 78 L224 60 L232 90 Q180 78 128 90 Z" fill="#f5c542" stroke="#a87810" stroke-width="2.5" stroke-linejoin="round"/><circle cx="180" cy="80" r="6" fill="#14b8a6"/><circle cx="152" cy="84" r="4" fill="#ff5fa2"/><circle cx="208" cy="84" r="4" fill="#ff5fa2"/>',
+ // Sat: pink cowgirl hat
+ '<path d="M92 86 Q100 98 180 96 Q260 98 268 86 Q276 74 258 78 Q180 92 102 78 Q84 74 92 86 Z" fill="#ff5fa2" stroke="#b0145e" stroke-width="2.5"/><path d="M130 82 Q126 40 156 40 Q170 48 180 40 Q190 48 204 40 Q234 40 230 82 Q180 92 130 82 Z" fill="#ff7ab6" stroke="#b0145e" stroke-width="2.5"/><path d="M132 76 Q180 86 228 76" fill="none" stroke="#ffd21f" stroke-width="5"/><path d="M180 60 l3 6 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1 Z" fill="#ffd21f"/>'
+];
+function dailyLook(d=new Date()){ return DAILY_LOOKS[d.getDay()]; }
 function dress() {
   const g = document.getElementById('daily');
   if (!g) return;
-  const pick = new Date().getDate() % 3;
-  g.innerHTML = pick === 0
-    ? '<path d="M150 96 L180 70 L210 96 Z" fill="#d3122a"/>'
-    : pick === 1
-    ? '<path d="M180 118 C170 104 154 112 166 126 L180 138 L194 126 C206 112 190 104 180 118 Z" fill="#e1062c"/>'
-    : '<rect x="108" y="138" width="40" height="16" rx="4" fill="#222"/><rect x="212" y="138" width="40" height="16" rx="4" fill="#222"/>';
+  const d = nowDate();
+  const hat = holidayHat(d);
+  if (hat) { g.innerHTML = hat; return; }
+  g.innerHTML = dailyLook(d);
 }
 let rain;
 function startRain() {
   const colors = ['#f5c518','#ff7a18','#4ecfb8','#7aa2ff','#ff5fa2','#fff6d6'];
+  const kind = treatKind();
   rain = setInterval(() => {
     const t = document.createElement('div');
-    t.className = 'treat';
+    t.className = 'treat treat-' + kind;
     const c = colors[Math.floor(Math.random() * colors.length)];
-    t.innerHTML = `<svg viewBox="0 0 22 12"><ellipse cx="11" cy="6" rx="7" ry="4" fill="${c}"/><path d="M4 6 L1 2 L1 10 Z" fill="${c}"/></svg>`;
+    t.innerHTML = treatSVG(kind, c);
     t.style.left = Math.random() * (window.innerWidth - 20) + 'px';
     t.style.top = '-10px';
     t.addEventListener('pointerdown', ev => { ev.stopPropagation(); meow(); t.remove(); });
@@ -1257,6 +1388,126 @@ function startRain() {
   }, 180);
 }
 function stopRain() { clearInterval(rain); }
+// ---- Power switch + original 8-bit pixel cat animations (canvas pixels, no external art) ----
+const PX = {
+  run1: ['............o..o','............oooo','............oeoe','.o..........oooo','o...oooooooooopo','o.ooooooooooooo.','.oooooooooooo...','..o.o.....o.o...','.o...o...o...o..'],
+  run2: ['............o..o','............oooo','............oeoe','o...........oooo','o...oooooooooopo','.oooooooooooooo.','..oooooooooooo..','...oo......oo...','...o.o....o.o...'],
+  sit:  ['.........o..o...','.........oooo...','.........oeoe...','.........oooo...','....oooooopoo...','...ooooooooo....','o..ooooooooo....','.o.ooooooooo....','..oooo.oo.oo....'],
+  curl: ['................','................','................','....ooooooo.....','..ooooooooooo...','.ooooooooo.o.o..','.oooooooooddoo..','..ooooooooooo...','...ooooooooo....']
+};
+const PXC = { o: '#ff7a18', e: '#111', p: '#ff5fa2', d: '#5a2a14' };
+function pxSprite(ctx, name, x, y, u) {
+  PX[name].forEach((row, r) => { for (let c = 0; c < row.length; c++) { const k = row[c]; if (PXC[k]) { ctx.fillStyle = PXC[k]; ctx.fillRect(Math.round(x + c * u), Math.round(y + r * u), u, u); } } });
+}
+function pxText(ctx, txt, x, y, u, color) {
+  const F = { O:['111','101','101','101','111'], N:['101','111','111','111','101'], F:['111','100','110','100','100'], Z:['111','001','010','100','111'], '!':['1','1','1','0','1'], ' ':['0','0','0','0','0'] };
+  ctx.fillStyle = color; let cx = x;
+  for (const ch of txt) { const g = F[ch] || F[' ']; g.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === '1') ctx.fillRect(cx + c * u, y + r * u, u, u); }); cx += (g[0].length + 1) * u; }
+}
+// Draw one frame. kind 'on' | 'off', t in 0..1. Pure: same t gives same picture (used for previews).
+function pxFrame(ctx, W, H, kind, t) {
+  const u = Math.max(3, Math.floor(H / 34));
+  ctx.fillStyle = '#0a0a12'; ctx.fillRect(0, 0, W, H);
+  const ground = Math.round(H * 0.78);
+  const sw = 16 * u, sh = 9 * u;
+  if (kind === 'on') {
+    ctx.fillStyle = '#2fa83a'; for (let x = 0; x < W; x += u * 2) ctx.fillRect(x, ground, u, u);
+    ctx.fillStyle = '#7aa2ff'; ctx.fillRect(0, ground + u, W, u);
+    const run = Math.min(1, t / 0.55);
+    let x = -sw + run * (W / 2 - sw / 2 + sw), y = ground - sh;
+    if (t > 0.55 && t < 0.85) { const j = (t - 0.55) / 0.3; y -= Math.sin(j * Math.PI) * H * 0.35; }
+    const frame = t < 0.55 ? (Math.floor(t * 40) % 2 ? 'run1' : 'run2') : t < 0.85 ? 'run2' : 'sit';
+    pxSprite(ctx, frame, x, y, u);
+    if (t > 0.62) {
+      const tw = 4 * 4 * u; pxText(ctx, 'ON!', Math.round(W / 2 - tw / 2), Math.round(H * 0.14), u, Math.floor(t * 20) % 2 ? '#ffe56a' : '#fff6d6');
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + t * 8; ctx.fillStyle = ['#ff5fa2','#4ecfb8','#ffe56a'][i % 3]; ctx.fillRect(Math.round(W / 2 + Math.cos(a) * W * 0.3), Math.round(H * 0.45 + Math.sin(a) * H * 0.2), u, u); }
+    }
+  } else {
+    // sit -> curl up -> zz -> CRT blip out
+    const cx = W / 2 - sw / 2, y = ground - sh;
+    let collapse = t > 0.7 ? (t - 0.7) / 0.3 : 0;
+    ctx.save();
+    if (collapse > 0) {
+      const sy = Math.max(0.02, 1 - collapse * 1.6), sx = collapse > 0.6 ? Math.max(0.02, 1 - (collapse - 0.6) * 2.4) : 1;
+      ctx.translate(W / 2, H / 2); ctx.scale(sx, sy); ctx.translate(-W / 2, -H / 2);
+    }
+    ctx.fillStyle = '#7aa2ff'; ctx.fillRect(0, ground + u, W, u);
+    pxSprite(ctx, t < 0.3 ? 'sit' : 'curl', cx, y, u);
+    if (t > 0.38 && t < 0.72) { const n = Math.floor((t - 0.38) * 12); pxText(ctx, n % 2 ? 'Z Z' : 'Z', Math.round(cx + sw * 0.7), Math.round(y - 7 * u - (n % 3) * u), u, '#fff6d6'); }
+    if (t > 0.5) pxText(ctx, 'OFF', Math.round(W / 2 - 6 * u), Math.round(H * 0.14), u, '#a77bff');
+    ctx.restore();
+    if (collapse > 0) {
+      ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+      if (collapse > 0.85) { ctx.fillStyle = '#fff'; ctx.fillRect(W / 2 - u, H / 2 - u / 2, u * 2, u); }
+    }
+  }
+  // scanlines
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; for (let yy = 0; yy < H; yy += 3) ctx.fillRect(0, yy, W, 1);
+}
+let powerOn = true;
+try { powerOn = localStorage.getItem('catculatorPower') !== 'off'; } catch (e) {}
+let pxRun = null;
+function chip(kind) {
+  if (muted) return;
+  try {
+    if (!meowCtx) meowCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind === 'on' ? [523, 659, 784, 1047] : [784, 587, 440, 262];
+    notes.forEach((f, i) => {
+      const o = meowCtx.createOscillator(), g = meowCtx.createGain(), t0 = meowCtx.currentTime + i * 0.09;
+      o.type = 'square'; o.frequency.setValueAtTime(f, t0);
+      g.gain.setValueAtTime(0.06, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
+      o.connect(g); g.connect(meowCtx.destination); o.start(t0); o.stop(t0 + 0.09);
+    });
+  } catch (e) {}
+}
+function playPixel(kind, fixedT) {
+  if (!screen.appendChild || !document.createElement) return;
+  if (pxRun) { cancelAnimationFrame(pxRun.raf); pxRun.cv.remove(); pxRun = null; }
+  const cv = document.createElement('canvas');
+  cv.className = 'pxfx';
+  const W = screen.clientWidth || 300, H = screen.clientHeight || 180;
+  cv.width = W; cv.height = H;
+  screen.appendChild(cv);
+  const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
+  if (fixedT != null) { pxFrame(ctx, W, H, kind, fixedT); pxRun = { cv, raf: 0 }; return; }
+  const dur = kind === 'on' ? 1900 : 1700, t0 = performance.now();
+  pxRun = { cv, raf: 0 };
+  const step = (now) => {
+    const t = Math.min(1, (now - t0) / dur);
+    pxFrame(ctx, W, H, kind, t);
+    if (t < 1) pxRun.raf = requestAnimationFrame(step);
+    else { cv.remove(); pxRun = null; }
+  };
+  pxRun.raf = requestAnimationFrame(step);
+}
+function setPower(on, animate) {
+  powerOn = on;
+  try { localStorage.setItem('catculatorPower', on ? 'on' : 'off'); } catch (e) {}
+  const b = document.getElementById('pwrBtn');
+  if (b) { b.classList.toggle('on', on); if (b.setAttribute) b.setAttribute('aria-checked', on ? 'true' : 'false'); }
+  if (animate) { stopPong(); chip(on ? 'on' : 'off'); playPixel(on ? 'on' : 'off'); }
+}
+// Holiday treats: eggs on Easter, candy corn on Oct 31, presents Dec 1-25, fish otherwise.
+function treatKind(d) {
+  const k = holidayKind(d || nowDate());
+  return k === 'easter' ? 'egg' : k === 'pumpkin' ? 'candycorn' : k === 'santa' ? 'present' : 'fish';
+}
+function treatSVG(kind, c) {
+  if (kind === 'egg') {
+    const eggs = ['#f7a1b3','#7aa2ff','#ffe56a','#b8f42c','#a77bff','#4ecfb8'];
+    const e = eggs[Math.floor(Math.random() * eggs.length)];
+    return `<svg viewBox="0 0 16 20" data-treat="egg"><path d="M8 1 C13 1 15 9 15 12.5 C15 16.5 12 19 8 19 C4 19 1 16.5 1 12.5 C1 9 3 1 8 1 Z" fill="${e}" stroke="#5a2a14" stroke-width=".8"/><path d="M1.6 10.5 L4.5 8.8 L8 10.6 L11.5 8.8 L14.4 10.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><circle cx="5" cy="14.5" r="1.1" fill="#fff"/><circle cx="8" cy="15.6" r="1.1" fill="#fff"/><circle cx="11" cy="14.5" r="1.1" fill="#fff"/><ellipse cx="5.6" cy="5.5" rx="1.4" ry="2.2" fill="#fff" opacity=".55"/></svg>`;
+  }
+  if (kind === 'candycorn')
+    return `<svg viewBox="0 0 18 20" data-treat="candycorn"><path d="M9 1 C11 1 17 15 16.5 17 C16 19 2 19 1.5 17 C1 15 7 1 9 1 Z" fill="#fff6d6" stroke="#7a2e06" stroke-width=".8"/><path d="M4.4 9.5 L13.6 9.5 C15 13 16.6 16 16.5 17 C16 19 2 19 1.5 17 C1.4 16 3 13 4.4 9.5 Z" fill="#ff7a18"/><path d="M2.6 14.6 L15.4 14.6 C16 16 16.6 16.6 16.5 17 C16 19 2 19 1.5 17 C1.4 16.6 2 16 2.6 14.6 Z" fill="#f5c518"/><path d="M9 1 C11 1 17 15 16.5 17 C16 19 2 19 1.5 17 C1 15 7 1 9 1 Z" fill="none" stroke="#7a2e06" stroke-width=".8"/></svg>`;
+  if (kind === 'present') {
+    const box = ['#d3122a','#2fa83a','#7aa2ff','#a77bff','#f5c518'];
+    const b = box[Math.floor(Math.random() * box.length)];
+    const r = b === '#f5c518' ? '#d3122a' : '#ffe56a';
+    return `<svg viewBox="0 0 18 18" data-treat="present"><rect x="2" y="6" width="14" height="11" rx="1.5" fill="${b}" stroke="#111" stroke-width=".8"/><rect x="1" y="4" width="16" height="4" rx="1" fill="${b}" stroke="#111" stroke-width=".8"/><rect x="7.7" y="4" width="2.6" height="13" fill="${r}"/><path d="M9 4 C6 0 3 2 5 4 Z M9 4 C12 0 15 2 13 4 Z" fill="${r}" stroke="#111" stroke-width=".6"/></svg>`;
+  }
+  return `<svg viewBox="0 0 22 12" data-treat="fish"><ellipse cx="11" cy="6" rx="7" ry="4" fill="${c}"/><path d="M4 6 L1 2 L1 10 Z" fill="${c}"/></svg>`;
+}
 function shakeFall() {
   document.querySelectorAll('.kitty').forEach(k => k.classList.add('drop'));
   setTimeout(() => {
@@ -1287,6 +1538,9 @@ window.addEventListener('devicemotion', e => {
   const a = e.accelerationIncludingGravity;
   if (a && Math.abs(a.x) + Math.abs(a.y) > 28) shakeFall();
 });
+setPower(powerOn, false);
+document.getElementById('pwrBtn').addEventListener('click', e => { if (e.stopPropagation) e.stopPropagation(); buzz(); setPower(!powerOn, true); });
+if (qp('pxdemo')) setTimeout(() => playPixel(qp('pxdemo') === 'off' ? 'off' : 'on', qp('pxt') != null ? +qp('pxt') : undefined), 400);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
 }
