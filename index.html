@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Catculator · Team Kori</title>
-<link rel="manifest" href="manifest.json?v=cc16">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc16">
+<link rel="manifest" href="manifest.json?v=cc17">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=cc17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catculator">
 <style>
@@ -151,6 +151,10 @@
   .pwr .knob { position: absolute; top: 1px; left: 1px; width: 8px; height: 8px; border-radius: 50%; background: #8d8d8d; transition: left .15s, background .15s; }
   .pwr.on .knob { left: 14px; background: #ffe56a; box-shadow: 0 0 4px #ffe56a; }
   .pwr::before { content: ''; position: absolute; inset: -8px -6px; }
+  body.powered-off .screen { background: #050505; box-shadow: inset 0 0 0 2px #1a1a1a; }
+  body.powered-off .screen .bs { display: none; }
+  .bs::after { content: ''; position: absolute; inset: -8px -10px; }
+  .screen { touch-action: none; }
   .pxfx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; border-radius: 14px; pointer-events: none; image-rendering: pixelated; }
   .paws { display: flex; justify-content: space-between; margin: -6px -10px -14px; position: relative; z-index: 2; pointer-events: none; }
   .keys {
@@ -512,6 +516,8 @@ let fresh = true;
 let lastOp = null;
 let lastB = null;
 let mode = 'cats';
+let powerOn = true;
+try { powerOn = localStorage.getItem('catculatorPower') !== 'off'; } catch (e) {}
 let muted = false;
 let vibeOn = true;
 const NAP_CHOICES = [15000, 30000, 60000, 120000, 300000, 0];
@@ -558,7 +564,7 @@ function render(l, tagged) {
   return mode === 'nums' ? `<span class="math num">${plainNum(l.n)}</span>` : lineFor(l.n, tagged);
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ lines, current, stored, op, fresh, lastOp, lastB })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ lines, current, stored, op, fresh, lastOp, lastB, expr })); } catch (e) {}
 }
 function restore() {
   try {
@@ -577,6 +583,7 @@ function restore() {
       lines = st.lines.filter(l => l && typeof l === 'object');
       current = typeof st.current === 'string' ? st.current : '0';
       stored = typeof st.stored === 'number' ? st.stored : null;
+      expr = Array.isArray(st.expr) ? st.expr.slice() : (stored != null && st.op ? [stored, st.op] : []);
       op = st.op || null; fresh = st.fresh !== false;
       lastOp = st.lastOp || null; lastB = typeof st.lastB === 'number' ? st.lastB : null;
     }
@@ -595,6 +602,13 @@ function rowsOf(list) {
   return rows;
 }
 function paint() {
+  if (!powerOn) {
+    // switched off: dark screen, keep only a running power animation
+    Array.from(screen.children || []).forEach(ch => { if (!ch.classList || !ch.classList.contains('pxfx')) ch.remove(); });
+    if (!screen.children || !screen.children.length) screen.innerHTML = "";
+    save();
+    return;
+  }
   const view = rowsOf(lines).slice(-5);
   screen.innerHTML = view.map((row, i) =>
     row.length > 1
@@ -621,6 +635,12 @@ function setVibe(on) {
   syncSettings();
 }
 function plainStr(v) { return String(v).replace(/^-/, '−'); }
+function addHistoryTokens(t, r) {
+  calcHist.unshift({ e: t.map(x => typeof x === 'number' ? plainNum(fmt(x)) : x).join(' '), a: String(r) });
+  calcHist = calcHist.slice(0, 10);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(calcHist)); } catch (e) {}
+  renderHistory();
+}
 function addHistory(a, o, b, r) {
   calcHist.unshift({ e: `${plainNum(a)} ${o} ${plainNum(b)}`, a: String(r) });
   calcHist = calcHist.slice(0, 10);
@@ -675,7 +695,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
 }
 function copyAnswer() {
-  if (document.getElementById('pong') || current === 'Err') return false;
+  if (!powerOn || document.getElementById('pong') || current === 'Err') return false;
   const v = String(Number(current)) === 'NaN' ? '0' : current.replace(/\.$/, '');
   copyText(v);
   toast('Copied ' + plainNum(v));
@@ -738,7 +758,7 @@ function percent() {
   if (current === 'Err') return;
   const b = Number(current);
   let v;
-  if (op === '+' || op === '−') v = stored * b / 100;
+  if (op === '+' || op === '−') v = evalTokens(expr.slice(0, -1)) * b / 100; // 200+10% = 220
   else if (op === '×' || op === '÷') v = b / 100;
   else v = b / 100;
   const pending = fresh && op;
@@ -746,13 +766,37 @@ function percent() {
   fresh = false;
   if (pending) pushLine(N(current)); else replaceLine(N(current));
 }
+// Delete the last character of the current expression: digits first, then the operator,
+// then digits of the number before it. A finished result is left alone.
 function backspace() {
+  if (!powerOn) return;
   if (current === 'Err') { clearAll(); return; }
-  if (fresh) return;
-  let c = current.slice(0, -1);
-  if (c === '' || c === '-' || c === '-0') c = '0';
-  current = c;
-  replaceLine(N(current));
+  if (!fresh) {
+    const c = current.slice(0, -1);
+    if (c === '' || c === '-' || c === '-0' || c === '0') {
+      // number is gone: drop its line, keep any pending operator
+      if (lines.length && lines[lines.length - 1].n != null) lines.pop();
+      current = '0';
+      fresh = true;
+      if (!op && !lines.length) { clearAll(); return; }
+      paint();
+      return;
+    }
+    current = c;
+    replaceLine(N(current));
+    return;
+  }
+  if (op && expr.length >= 2) {
+    // remove the pending operator and go back to editing the number before it
+    if (lines.length && lines[lines.length - 1].o) lines.pop();
+    expr.pop();
+    const n = expr.pop();
+    current = fmt(n);
+    op = expr.length ? expr[expr.length - 1] : null;
+    stored = op ? evalTokens(expr.slice(0, -1)) : null;
+    fresh = false;
+    paint();
+  }
 }
 function inputDigit(d) {
   if (fresh) {
@@ -770,6 +814,7 @@ function inputDigit(d) {
 function lineFor(value, tagged) {
   const s = String(value);
   if (tagged) return tagCat(s);
+  { const w = Math.abs(parseInt(s.replace('-', ''), 10)) || 0; if (w > 10 || (s.startsWith('-') && w > 9)) return tagCat(s); }
   const neg = s.startsWith('-');
   const body = neg ? s.slice(1) : s;
   const [whole, frac] = body.split('.');
@@ -789,12 +834,28 @@ function inputDot() {
     replaceLine(N(current));
   }
 }
+// Normal order of operations: the expression is kept as tokens [n, op, n, op, ...] and
+// only evaluated on =, with × and ÷ before + and −.
+let expr = [];
+function evalTokens(t) {
+  if (!t.length) return 0;
+  const sums = [Number(t[0])], ops = [];
+  for (let i = 1; i < t.length; i += 2) {
+    const o = t[i], b = Number(t[i + 1]);
+    if (o === '×') sums[sums.length - 1] *= b;
+    else if (o === '÷') sums[sums.length - 1] = b === 0 ? NaN : sums[sums.length - 1] / b;
+    else { ops.push(o); sums.push(b); }
+  }
+  let r = sums[0];
+  ops.forEach((o, i) => { r = o === '+' ? r + sums[i + 1] : r - sums[i + 1]; });
+  return r;
+}
+function divByZero(t) { for (let i = 1; i < t.length; i += 2) if (t[i] === '÷' && Number(t[i + 1]) === 0) return true; return false; }
 function setOp(next) {
   if (current === 'Err') return;
-  if (op && fresh) { op = next; replaceLine(O(next)); return; }
-  if (op && !fresh) { equals(); if (current !== 'Err' && lines.length) lines[lines.length - 1].mid = 1; }
-  if (current === 'Err') return;
-  stored = Number(current);
+  if (op && fresh) { op = next; expr[expr.length - 1] = next; replaceLine(O(next)); return; }
+  expr.push(Number(current), next);
+  stored = evalTokens(expr.slice(0, -1));
   op = next;
   fresh = true;
   pushLine(O(next));
@@ -811,25 +872,21 @@ function dance() {
 }
 function equals() {
   if (current === 'Err') return;
-  let b;
-  if (op == null || stored == null) {
+  let tokens;
+  if (op == null || !expr.length) {
     if (!lastOp) return;
-    stored = Number(current); op = lastOp; b = lastB;
+    tokens = [Number(current), lastOp, lastB]; // repeat-=: apply the last operation again
   } else {
-    b = Number(current);
-    lastOp = op; lastB = b;
+    tokens = expr.concat(Number(current));
+    lastOp = op; lastB = Number(current);
   }
-  const histA = stored, histOp = op, histB = b;
-  let r = stored;
-  if (op === '+') r = stored + b;
-  if (op === '−') r = stored - b;
-  if (op === '×') r = stored * b;
-  if (op === '÷') r = b === 0 ? NaN : stored / b;
-  if (op === '÷' && b === 0) shock();
+  const r = evalTokens(tokens);
+  if (divByZero(tokens)) shock();
   else if (Number.isFinite(r)) { blink(); purr(); }
   current = fmt(r);
   if (current === 'Err') { lastOp = null; lastB = null; }
-  else addHistory(histA, histOp, histB, current);
+  else addHistoryTokens(tokens, current);
+  expr = [];
   pushLine(current === 'Err' ? ERR : N(current));
   op = null;
   stored = null;
@@ -865,6 +922,7 @@ function clearAll() {
   current = '0';
   stored = null;
   op = null;
+  expr = [];
   fresh = true;
   lastOp = null;
   lastB = null;
@@ -880,6 +938,7 @@ function stopPong() {
       lines = saved.lines;
       current = saved.current;
       stored = saved.stored;
+      expr = saved.expr || [];
       op = saved.op;
       fresh = saved.fresh;
       saved = null;
@@ -940,7 +999,7 @@ function startPong() {
   }
   if (meowCtx.state === 'suspended') meowCtx.resume();
   stopPong();
-  saved = { lines: lines.slice(), current, stored, op, fresh };
+  saved = { lines: lines.slice(), current, stored, op, fresh, expr: expr.slice() };
   save();
   const w = screen.clientWidth;
   const h = screen.clientHeight;
@@ -1140,6 +1199,7 @@ function startPong() {
 document.querySelectorAll('button.key, button.pawbtn[data-key]').forEach(btn => {
   btn.addEventListener('click', () => {
     const k = btn.dataset.key;
+    if (!powerOn) return; // off: only the CATSIO switch works
     buzz();
     if (k >= '0' && k <= '9') secret = (secret + k).slice(-3);
     else if (k === '=' && secret === '123') dance();
@@ -1230,7 +1290,7 @@ document.getElementById('sheet').addEventListener('click', e => { if (e.target.i
 document.getElementById('clearSaved').addEventListener('click', clearSaved);
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('[data-snd]').forEach(b => b.addEventListener('click', () => setMuted(b.dataset.snd === 'off')));
-document.getElementById('modeBtn').addEventListener('click', () => setMode(mode === 'cats' ? 'nums' : 'cats'));
+document.getElementById('modeBtn').addEventListener('click', () => { if (powerOn) setMode(mode === 'cats' ? 'nums' : 'cats'); });
 (() => {
   const b = document.createElement && document.createElement('button');
   if (!b) return;
@@ -1444,8 +1504,6 @@ function pxFrame(ctx, W, H, kind, t) {
   // scanlines
   ctx.fillStyle = 'rgba(0,0,0,.22)'; for (let yy = 0; yy < H; yy += 3) ctx.fillRect(0, yy, W, 1);
 }
-let powerOn = true;
-try { powerOn = localStorage.getItem('catculatorPower') !== 'off'; } catch (e) {}
 let pxRun = null;
 function chip(kind) {
   if (muted) return;
@@ -1485,7 +1543,10 @@ function setPower(on, animate) {
   try { localStorage.setItem('catculatorPower', on ? 'on' : 'off'); } catch (e) {}
   const b = document.getElementById('pwrBtn');
   if (b) { b.classList.toggle('on', on); if (b.setAttribute) b.setAttribute('aria-checked', on ? 'true' : 'false'); }
-  if (animate) { stopPong(); chip(on ? 'on' : 'off'); playPixel(on ? 'on' : 'off'); }
+  document.body.classList.toggle('powered-off', !on);
+  if (animate) { stopPong(); stopRain(); chip(on ? 'on' : 'off'); }
+  paint(); // off: blank the screen now; on: restore it (the on animation plays over it)
+  if (animate) playPixel(on ? 'on' : 'off');
 }
 // Holiday treats: eggs on Easter, candy corn on Oct 31, presents Dec 1-25, fish otherwise.
 function treatKind(d) {
@@ -1517,7 +1578,7 @@ function shakeFall() {
 }
 dress();
 const meowBtn = document.querySelector('[data-key="meow"]');
-meowBtn.addEventListener('pointerdown', startRain);
+meowBtn.addEventListener('pointerdown', () => { if (powerOn) startRain(); });
 meowBtn.addEventListener('pointerup', stopRain);
 meowBtn.addEventListener('pointerleave', stopRain);
 function setTilt(n) {
